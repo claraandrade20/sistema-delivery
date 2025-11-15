@@ -1,5 +1,5 @@
 
-  # Food Delivery App Design
+  # Sistema de Delivery
 
   Projeto frontend de um sistema de delivery, gerado a partir de um design do Figma e reorganizado para atender a uma arquitetura mais próxima do que é cobrado em projetos acadêmicos (separação de camadas e responsabilidades).
 
@@ -14,7 +14,7 @@
   Estrutura principal após a refatoração:
 
   ```text
-  Food Delivery App Design/
+  sistema-delivery/
   ├─ frontend/
   │  ├─ index.html
   │  ├─ package.json
@@ -219,14 +219,14 @@
   ### 3.1. Instalar dependências
 
   ```bash
-  cd "Food Delivery App Design/frontend"
+  cd "sistema-delivery/frontend"
   npm install
   ```
 
   ### 3.2. Rodar em modo desenvolvimento
 
   ```bash
-  cd "Food Delivery App Design/frontend"
+  cd "sistema-delivery/frontend"
   npm run dev
   ```
 
@@ -236,10 +236,10 @@
 
   ## 4. Próximos passos (backend)
 
-  Para atender completamente aos requisitos técnicos da disciplina (JDBC + MySQL, DAO/Service/Controller, integridade referencial, etc.), o próximo passo é criar um backend em Java que substitua os mocks:
+  Para atender completamente aos requisitos técnicos da disciplina (JDBC + MySQL, DAO/Service/Controller, integridade referencial, etc.), o próximo passo é criar um backend em Node.js e Express.js que substitua os mocks:
 
   - Mapear as entidades do `mockData.ts` para tabelas MySQL.
-  - Implementar DAOs com JDBC para realizar CRUD nas tabelas.
+  - Implementar DAOs com JSON para realizar CRUD nas tabelas.
   - Implementar camada Service para regras de negócio.
   - Implementar Controllers (por exemplo, REST) para expor APIs ao frontend.
   - Trocar as chamadas mockadas no frontend por chamadas HTTP ao backend.
