@@ -136,7 +136,7 @@ export function CheckoutScreen({ cartItems, onBack, onCheckout }: CheckoutScreen
               <div>
                 <p className="text-gray-900">Rua das Flores, 123</p>
                 <p className="text-sm text-gray-500">
-                  Jardim Primavera - São Paulo, SP
+                  Jardim Japones - Fortaleza, CE
                 </p>
                 <p className="text-sm text-gray-500">CEP: 01234-567</p>
               </div>

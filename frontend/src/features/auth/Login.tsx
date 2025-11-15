@@ -266,7 +266,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
                     <Input
                       id="register-phone"
                       type="tel"
-                      placeholder="(11) 98765-4321"
+                      placeholder="(85) 98765-4321"
                       className="pl-10"
                       value={registerPhone}
                       onChange={(e) => setRegisterPhone(e.target.value)}

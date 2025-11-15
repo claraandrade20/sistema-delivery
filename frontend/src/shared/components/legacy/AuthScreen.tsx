@@ -60,7 +60,7 @@ export function AuthScreen({ onLogin }: AuthScreenProps) {
                 <Input
                   id="phone"
                   type="tel"
-                  placeholder="(11) 99999-9999"
+                  placeholder="(85) 99999-9999"
                   required
                 />
               </div>

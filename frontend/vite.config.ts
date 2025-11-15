@@ -50,6 +50,13 @@
         '@app': path.resolve(__dirname, './src/app'),
         '@features': path.resolve(__dirname, './src/features'),
         '@shared': path.resolve(__dirname, './src/shared'),
+        // Mapear imports absolutos usados no código (ex: "/ui/button")
+        // Preferível migrar para "@shared/...", mas estes aliases garantem compatibilidade imediata
+        '/ui': path.resolve(__dirname, './src/shared/ui'),
+        '/context': path.resolve(__dirname, './src/shared/context'),
+        '/components': path.resolve(__dirname, './src/shared/components'),
+        '/data': path.resolve(__dirname, './src/shared/data'),
+        '/types': path.resolve(__dirname, './src/shared/types'),
       },
     },
     build: {

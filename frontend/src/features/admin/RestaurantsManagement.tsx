@@ -43,7 +43,7 @@ export const RestaurantsManagement = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Telefone</Label>
-                  <Input placeholder="(11) 3456-7890" />
+                  <Input placeholder="(85) 3456-7890" />
                 </div>
                 <div>
                   <Label>Email</Label>
