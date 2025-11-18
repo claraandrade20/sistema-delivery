@@ -4,6 +4,7 @@ import cors from "cors";
 import produtosRoutes from "./routes/produtos";
 import pedidosRoutes from "./routes/pedidos";
 import autenticacaoRoutes from "./routes/autenticacao";
+import pool from "./config/database";
 
 // Carregar variáveis de ambiente do arquivo .env
 dotenv.config();
