@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import type { User, UserRole } from '@shared/types';
-import { mockUsers } from '@shared/data/mockData';
+import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import type { User } from '@shared/types';
+import { authAPI } from '@shared/services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -8,26 +8,49 @@ interface AuthContextType {
   logout: () => void;
   register: (name: string, email: string, phone: string, password: string) => Promise<boolean>;
   isAuthenticated: boolean;
+  loading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Verificar se há token salvo ao carregar
+  useEffect(() => {
+    const checkAuth = async () => {
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        try {
+          const userData = await authAPI.getMe();
+          setUser(userData);
+        } catch (error) {
+          console.error('Erro ao verificar autenticação:', error);
+          localStorage.removeItem('token');
+        }
+      }
+      
+      setLoading(false);
+    };
+
+    checkAuth();
+  }, []);
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simulação de login com dados mock
-    const foundUser = mockUsers.find(u => u.email === email && u.isActive);
-    
-    if (foundUser) {
-      setUser(foundUser);
+    try {
+      const response = await authAPI.login(email, password);
+      setUser(response.user);
       return true;
+    } catch (error) {
+      console.error('Erro no login:', error);
+      return false;
     }
-    
-    return false;
   };
 
   const logout = () => {
+    authAPI.logout();
     setUser(null);
   };
 
@@ -37,19 +60,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     phone: string,
     password: string
   ): Promise<boolean> => {
-    // Simulação de registro
-    const newUser: User = {
-      id: `client-${Date.now()}`,
-      name,
-      email,
-      phone,
-      role: 'client',
-      createdAt: new Date().toISOString(),
-      isActive: true,
-    };
-    
-    setUser(newUser);
-    return true;
+    try {
+      const newUser = await authAPI.register(name, email, phone, password);
+      setUser(newUser);
+      return true;
+    } catch (error) {
+      console.error('Erro no registro:', error);
+      return false;
+    }
   };
 
   return (
@@ -60,6 +78,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         logout,
         register,
         isAuthenticated: !!user,
+        loading,
       }}
     >
       {children}

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "order-1",
+    "customerId": "client-1",
+    "customerName": "João Silva",
+    "customerPhone": "(85) 98765-4321",
+    "restaurantId": "rest-1",
+    "restaurantName": "Pizzaria Bella Napoli",
+    "items": [
+      {
+        "productId": "prod-1",
+        "productName": "Pizza Margherita",
+        "variationId": "var-1-3",
+        "variationName": "Grande",
+        "quantity": 1,
+        "subtotal": 49.9
+      }
+    ],
+    "deliveryAddress": {
+      "street": "Rua das Flores",
+      "number": "123",
+      "complement": "Apto 45",
+      "neighborhood": "Meireles",
+      "city": "Fortaleza",
+      "state": "CE",
+      "zipCode": "60115-050"
+    },
+    "paymentMethod": "pix",
+    "subtotal": 49.9,
+    "deliveryFee": 8.9,
+    "discount": 0,
+    "total": 58.8,
+    "status": "delivered",
+    "createdAt": "2025-11-10T18:30:00Z",
+    "updatedAt": "2025-11-10T19:45:00Z"
+  }
+]

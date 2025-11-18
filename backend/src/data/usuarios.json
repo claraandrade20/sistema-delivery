@@ -1,0 +1,43 @@
+[
+  {
+    "id": "client-1",
+    "name": "João Silva",
+    "email": "joao@email.com",
+    "password": "$2a$10$tzBGDjKirxR7cDBWgHDN7O3xivNrQgnxgeVI6hXGKgNRz7DmxaNX6",
+    "phone": "(85) 98765-4321",
+    "role": "client",
+    "createdAt": "2024-01-15T10:30:00Z",
+    "isActive": true
+  },
+  {
+    "id": "client-2",
+    "name": "Maria Santos",
+    "email": "maria@email.com",
+    "password": "$2a$10$tzBGDjKirxR7cDBWgHDN7O3xivNrQgnxgeVI6hXGKgNRz7DmxaNX6",
+    "phone": "(85) 91234-5678",
+    "role": "client",
+    "createdAt": "2024-02-20T14:20:00Z",
+    "isActive": true
+  },
+  {
+    "id": "employee-1",
+    "name": "Carlos Souza",
+    "email": "carlos@restaurant.com",
+    "password": "$2a$10$tzBGDjKirxR7cDBWgHDN7O3xivNrQgnxgeVI6hXGKgNRz7DmxaNX6",
+    "phone": "(85) 99999-8888",
+    "role": "employee",
+    "createdAt": "2023-11-10T09:00:00Z",
+    "isActive": true,
+    "restaurantId": "rest-1"
+  },
+  {
+    "id": "admin-1",
+    "name": "Roberto Admin",
+    "email": "admin@deliverysystem.com",
+    "password": "$2a$10$tzBGDjKirxR7cDBWgHDN7O3xivNrQgnxgeVI6hXGKgNRz7DmxaNX6",
+    "phone": "(85) 77777-6666",
+    "role": "admin",
+    "createdAt": "2023-01-01T00:00:00Z",
+    "isActive": true
+  }
+]
