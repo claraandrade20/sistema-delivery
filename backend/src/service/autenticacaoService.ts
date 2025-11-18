@@ -1,8 +1,9 @@
 import { lerJSON, salvarJSON } from "../utils/fileUtils";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
+import path from "path";
 
-const caminhoUsuarios = "./src/data/usuarios.json";
+const caminhoUsuarios = path.join(__dirname, "../data/usuarios.json");
 const JWT_SECRET = process.env.JWT_SECRET || "secret-key-default-dev-only";
 
 export interface Usuario {

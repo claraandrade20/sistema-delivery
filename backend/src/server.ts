@@ -1,8 +1,12 @@
+import dotenv from "dotenv";
 import express from "express";
 import cors from "cors";
 import produtosRoutes from "./routes/produtos";
 import pedidosRoutes from "./routes/pedidos";
 import autenticacaoRoutes from "./routes/autenticacao";
+
+// Carregar variáveis de ambiente do arquivo .env
+dotenv.config();
 
 const app = express();
 
@@ -27,6 +31,20 @@ app.use((req, res, next) => {
 app.use("/api/produtos", produtosRoutes);
 app.use("/api/pedidos", pedidosRoutes);
 app.use("/api/auth", autenticacaoRoutes);
+
+// Rota raiz da API
+app.get("/api", (req, res) => {
+  res.json({
+    message: "API Delivery funcionando!",
+    version: "1.0.0",
+    endpoints: {
+      auth: "/api/auth",
+      produtos: "/api/produtos",
+      pedidos: "/api/pedidos",
+      health: "/api/health",
+    },
+  });
+});
 
 // Rota de teste
 app.get("/", (req, res) => {
