@@ -3,7 +3,7 @@
     "id": "client-1",
     "name": "João Silva",
     "email": "joao@email.com",
-    "password": "$2a$10$tzBGDjKirxR7cDBWgHDN7O3xivNrQgnxgeVI6hXGKgNRz7DmxaNX6",
+    "password": "$2a$10$5Iw4iIA8h1f.PP1vE7h4B.JsP0VDZBF70KAa6UPgeDycg43KRcSCm",
     "phone": "(85) 98765-4321",
     "role": "client",
     "createdAt": "2024-01-15T10:30:00Z",
@@ -13,7 +13,7 @@
     "id": "client-2",
     "name": "Maria Santos",
     "email": "maria@email.com",
-    "password": "$2a$10$tzBGDjKirxR7cDBWgHDN7O3xivNrQgnxgeVI6hXGKgNRz7DmxaNX6",
+    "password": "$2a$10$qMv2dd/d0UAwAfwLdQQnGOILGdi2wvu7KbR6BPgp6EwvuLzvcYRxG",
     "phone": "(85) 91234-5678",
     "role": "client",
     "createdAt": "2024-02-20T14:20:00Z",
@@ -23,7 +23,7 @@
     "id": "employee-1",
     "name": "Carlos Souza",
     "email": "carlos@restaurant.com",
-    "password": "$2a$10$tzBGDjKirxR7cDBWgHDN7O3xivNrQgnxgeVI6hXGKgNRz7DmxaNX6",
+    "password": "$2a$10$BGQFZMMhTFXi0hNxaBx05OEawiLWEBZbauFnWTe/sfBpWDw5JW//K",
     "phone": "(85) 99999-8888",
     "role": "employee",
     "createdAt": "2023-11-10T09:00:00Z",
@@ -34,10 +34,20 @@
     "id": "admin-1",
     "name": "Roberto Admin",
     "email": "admin@deliverysystem.com",
-    "password": "$2a$10$tzBGDjKirxR7cDBWgHDN7O3xivNrQgnxgeVI6hXGKgNRz7DmxaNX6",
+    "password": "$2a$10$8z/7ltE8u2FPaDmJno2g9eJkB6.Ht2bKEEaLVug9ELawI/l.7Ad.S",
     "phone": "(85) 77777-6666",
     "role": "admin",
     "createdAt": "2023-01-01T00:00:00Z",
+    "isActive": true
+  },
+  {
+    "id": "client-1763500819604",
+    "name": "Clara Andrade",
+    "email": "clara@gmail.com",
+    "password": "$2a$10$8fga5elW1cMpB7QwBw4nzOWr.VHSZrHiurPl77lqlKSECiRG1b/5e",
+    "phone": "8596684564",
+    "role": "client",
+    "createdAt": "2025-11-18T21:20:19.607Z",
     "isActive": true
   }
 ]

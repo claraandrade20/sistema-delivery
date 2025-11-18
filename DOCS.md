@@ -46,17 +46,21 @@ O frontend estará disponível em `http://localhost:5173`
 
 ## 🔑 Usuários de Teste
 
-### Cliente
+### Cliente (João Silva)
 - Email: `joao@email.com`
-- Senha: `123456`
+- Senha: `joao123`
 
-### Funcionário
+### Cliente (Maria Santos)
+- Email: `maria@email.com`
+- Senha: `maria456`
+
+### Funcionário (Carlos Souza)
 - Email: `carlos@restaurant.com`
-- Senha: `123456`
+- Senha: `carlos789`
 
-### Administrador
+### Administrador (Roberto Admin)
 - Email: `admin@deliverysystem.com`
-- Senha: `123456`
+- Senha: `admin123`
 
 ## 📡 API Endpoints
 
@@ -189,7 +193,7 @@ Os dados são persistidos em arquivos JSON na pasta `/backend/src/data/`:
 
 ## ⚠️ Notas Importantes
 
-1. **Senhas**: Todas as senhas dos usuários de teste são hasheadas com bcrypt (senha: `123456`)
+1. **Senhas**: Todas as senhas dos usuários de teste são hasheadas com bcrypt. Cada usuário tem uma senha diferente.
 2. **CORS**: O backend está configurado para aceitar requisições do frontend em `localhost:5173`
 3. **JWT Secret**: Em produção, altere a variável `JWT_SECRET` no arquivo `.env`
 4. **Dados Mock**: Os dados iniciais são apenas para demonstração
