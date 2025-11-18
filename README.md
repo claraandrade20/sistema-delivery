@@ -30,219 +30,391 @@
   │     │  │  ├─ EmployeeLayout.tsx
   │     │  │  └─ AdminLayout.tsx
   │     │  ├─ navigation/        (reservado p/ lógica de navegação futura)
-  │     │  └─ providers/         (reservado p/ providers globais futuros)
-  │     ├─ features/
-  │     │  ├─ auth/
-  │     │  │  └─ Login.tsx
-  │     │  ├─ client/
-  │     │  │  ├─ ClientHome.tsx
-  │     │  │  ├─ ProductsList.tsx
-  │     │  │  ├─ ProductDetail.tsx
-  │     │  │  ├─ Cart.tsx
-  │     │  │  ├─ Checkout.tsx
-  │     │  │  ├─ MyOrders.tsx
-  │     │  │  ├─ ClientProfile.tsx
-  │     │  │  └─ OrderTracking.tsx
-  │     │  ├─ employee/
-  │     │  │  ├─ EmployeeDashboard.tsx
-  │     │  │  ├─ OrdersManagement.tsx
-  │     │  │  ├─ ProductsManagement.tsx
-  │     │  │  ├─ StockManagement.tsx
-  │     │  │  ├─ CategoriesManagement.tsx
-  │     │  │  └─ BusinessHoursManagement.tsx
-  │     │  └─ admin/
-  │     │     ├─ AdminDashboard.tsx
-  │     │     ├─ RestaurantsManagement.tsx
-  │     │     └─ CustomersManagement.tsx
-  │     └─ shared/
-  │        ├─ components/
-  │        │  ├─ figma/
-  │        │  │  └─ ImageWithFallback.tsx
-  │        │  └─ legacy/   (telas antigas geradas pelo Figma, mantidas como referência)
-  │        ├─ context/
-  │        │  ├─ AuthContext.tsx
-  │        │  └─ CartContext.tsx
-  │        ├─ data/
-  │        │  └─ mockData.ts
-  │        ├─ styles/
-  │        │  └─ globals.css
-  │        ├─ types/
-  │        │  └─ index.ts
-  │        └─ ui/
-  │           └─ ... componentes de UI (button, card, input, etc.)
-  └─ .gitignore
-  ```
+   # Sistema de Delivery
 
-  ### 1.1. Camada `app/`
+   Projeto full-stack (frontend + backend) para um sistema de delivery. Este repositório contém:
 
-  - `App.tsx`: é o "orquestrador" do frontend.
-    - Lê o usuário logado via `AuthContext`.
-    - Decide qual layout usar (`ClientLayout`, `EmployeeLayout`, `AdminLayout`) com base no papel do usuário (cliente, funcionário, admin).
-    - Controla a "rota" atual com um `useState(currentPage)`, simulando um roteador.
-  - `layouts/`: define o esqueleto visual das páginas (header, navegação, footer) para cada tipo de usuário.
-    - Ex.: `ClientLayout` mostra logo, barra de busca, menu com Início/Cardápio/Pedidos/Carrinho/Perfil.
-  - `navigation/`: pasta vazia por enquanto, pensada para centralizar regras de navegação (por exemplo, um mapa de rotas por perfil de usuário).
-  - `providers/`: pasta vazia por enquanto, planejada para agrupar providers globais (por exemplo, um `AppProviders.tsx` que englobe `AuthProvider`, `CartProvider`, etc.).
+   - `frontend/`: aplicação React + Vite (TypeScript)
+   - `backend/`: API em Node.js + Express + TypeScript (persistência em arquivos JSON para desenvolvimento)
 
-  ### 1.2. Camada `features/`
+   O frontend foi inicialmente criado a partir de um design no Figma; o backend foi implementado posteriormente para integrar as telas com uma API REST.
 
-  Organiza as telas por **área funcional**, o que facilita explicar o código por contexto de negócio:
+   ---
 
-  - `features/auth`:
-    - `Login.tsx`: tela de login; usa `useAuth()` para autenticar e definir o usuário logado.
+   ## O que foi adicionado (resumo das novidades)
 
-  - `features/client` (fluxo do cliente final):
-    - `ClientHome.tsx`: home com promoções, categorias e produtos em destaque.
-    - `ProductsList.tsx`: listagem de produtos do cardápio, filtros por categoria, etc.
-    - `ProductDetail.tsx`: detalhe de um produto, seleção de variação, adicionais e quantidade.
-    - `Cart.tsx`: resumo dos itens adicionados ao carrinho (integra com `CartContext`).
-    - `Checkout.tsx`: finalização do pedido (método de pagamento, endereço, observações).
-    - `MyOrders.tsx`: histórico de pedidos do cliente.
-    - `OrderTracking.tsx`: acompanhamento do status de um pedido específico.
-    - `ClientProfile.tsx`: dados do perfil do cliente, endereços, etc.
+   - Backend em Node.js + Express com TypeScript
+     - Autenticação JWT (login / register)
+     - Hash de senhas com `bcryptjs`
+     - Middlewares de autenticação
+     - Endpoints para Produtos e Pedidos (CRUD)
+     - Persistência simples em `backend/src/data/*.json` para desenvolvimento
+   - Integração frontend ↔ backend
+     - `frontend/src/shared/services/api.ts` implementado para consumir a API
+     - `AuthContext` atualizado para usar a API real e persistir token no `localStorage`
+   - Documentação e scripts para rodar localmente
 
-  - `features/employee` (fluxo do funcionário):
-    - `EmployeeDashboard.tsx`: visão geral de pedidos, métricas, etc.
-    - `OrdersManagement.tsx`: gerenciamento dos pedidos em andamento.
-    - `ProductsManagement.tsx`: gerenciamento de produtos do cardápio.
-    - `StockManagement.tsx`: controle de estoque.
-    - `CategoriesManagement.tsx`: categorias de produtos.
-    - `BusinessHoursManagement.tsx`: horários de funcionamento do restaurante.
+   ---
 
-  - `features/admin` (fluxo do administrador):
-    - `AdminDashboard.tsx`: visão geral do sistema (usuários, restaurantes, estatísticas).
-    - `RestaurantsManagement.tsx`: gerenciamento de restaurantes.
-    - `CustomersManagement.tsx`: gerenciamento de clientes.
+   ## Estrutura do repositório
 
-  ### 1.3. Camada `shared/`
+   ```text
+   sistema-delivery/
+   ├─ backend/
+   │  ├─ src/
+   │  │  ├─ controller/
+   │  │  ├─ service/
+   │  │  ├─ routes/
+   │  │  ├─ middleware/
+   │  │  ├─ data/            # arquivos JSON usados como DB de desenvolvimento
+   │  │  └─ server.ts
+   │  ├─ package.json
+   │  └─ tsconfig.json
+   ├─ frontend/
+   │  ├─ src/
+   │  │  ├─ features/
+   │  │  ├─ shared/
+   │  │  │  ├─ services/api.ts
+   │  │  │  └─ context/AuthContext.tsx
+   │  └─ package.json
+   └─ DOCS.md
+   ```
 
-  Tudo o que é **compartilhado** entre features ou layouts fica em `shared/`.
+   ---
 
-  - `shared/components/figma`:
-    - `ImageWithFallback.tsx`: componente reutilizável para imagens do Figma (com fallback).
+   ## Como rodar localmente
 
-  - `shared/components/legacy`:
-    - Telas e componentes originais gerados pelo Figma (por exemplo, `AuthScreen`, `BottomNav`, etc.).
-    - Não são usados na versão atual, mas foram preservados como referência visual/histórica.
+   Siga os passos abaixo em dois terminais separados (um para backend e outro para frontend).
 
-  - `shared/context`:
-    - `AuthContext.tsx`:
-      - Define o tipo `AuthContextType` (usuário atual, `login`, `logout`, `register`, flag `isAuthenticated`).
-      - Usa dados mockados (`mockUsers`) para simular autenticação.
-      - Exposta via `AuthProvider` e hook `useAuth()`.
-    - `CartContext.tsx`:
-      - Gerencia o estado do carrinho (`items`, `addToCart`, `removeFromCart`, `updateQuantity`, `clearCart`).
-      - Calcula total (`getTotal`) e quantidade de itens (`getItemsCount`).
-      - Exposta via `CartProvider` e hook `useCart()`.
+   ### Backend
 
-  - `shared/data/mockData.ts`:
-    - Contém dados mockados de usuários, restaurantes, produtos, pedidos, categorias, promoções, etc.
-    - Também expõe funções utilitárias como:
-      - `getOrdersByCustomer(customerId)`
-      - `getFeaturedProducts(restaurantId)`
-      - `getUserAddresses(userId)`
-    - No futuro, esta camada será substituída por chamadas ao backend (Java + JDBC + MySQL).
+   1. Entre na pasta do backend:
 
-  - `shared/styles/globals.css`:
-    - Define variáveis de tema (background, foreground, cores de componentes, radius etc.).
-    - Usa utilitários do Tailwind para aplicar estilos base de tipografia.
+   ```powershell
+   cd backend
+   ```
 
-  - `shared/types/index.ts`:
-    - Centraliza tipos TypeScript como `User`, `Product`, `Order`, `CartItem`, etc.
-    - Esses tipos são usados em `context`, `features` e `data` para manter o código tipado e mais seguro.
+   2. Instale dependências (se ainda não fez):
 
-  - `shared/ui/`:
-    - Conjunto de componentes de interface generais (Button, Card, Input, Select, Modal, Tooltip, etc.), baseado em Radix UI + Tailwind (estilo shadcn).
-    - São reutilizados em todas as features, evitando código duplicado.
+   ```powershell
+   npm install
+   ```
 
-  ### 1.4. Aliases de importação
+   3. Crie um arquivo `.env` baseado no `.env.example` (opcional):
 
-  Para evitar caminhos relativos longos (`../../context/AuthContext`), foram criados aliases de importação em `tsconfig.json` e `vite.config.ts`:
+   ```powershell
+   copy .env.example .env
+   # editar .env se quiser alterar JWT_SECRET ou PORT
+   ```
 
-  - `@app/*` → `src/app/*`
-  - `@features/*` → `src/features/*`
-  - `@shared/*` → `src/shared/*`
+   4. Inicie o servidor em modo desenvolvimento (hot reload):
 
-  Exemplos:
+   ```powershell
+   npm run dev
+   ```
 
-  ```ts
-  // Antes
-  import { useAuth } from '../../context/AuthContext';
+   O servidor irá escutar por padrão em `http://localhost:3000` e expor a API em `/api/*`.
 
-  // Depois
-  import { useAuth } from '@shared/context/AuthContext';
+   ---
 
-  // Uso de feature
-  import { ClientHome } from '@features/client/ClientHome';
+   ### Frontend
 
-  // Uso de UI compartilhada
-  import { Button } from '@shared/ui/button';
-  ```
+   1. Abra outro terminal e entre na pasta do frontend:
 
-  Isso deixa o código mais legível e ajuda na explicação da arquitetura para o professor.
+   ```powershell
+   cd frontend
+   ```
+
+   2. Instale dependências (se ainda não fez):
+
+   ```powershell
+   npm install
+   ```
+
+   3. Ajuste a variável de ambiente se necessário (arquivo `.env` no frontend):
+
+   ```text
+   VITE_API_URL=http://localhost:3000/api
+   ```
+
+   4. Inicie o frontend:
+
+   ```powershell
+   npm run dev
+   ```
+
+   O frontend normalmente abre em `http://localhost:5173`.
+
+   ---
+
+   ## Usuários de teste
+
+   Para facilitar testes locais, há usuários de teste já cadastrados em `backend/src/data/usuarios.json`.
+
+   - Cliente (João)
+     - Email: `joao@email.com`
+     - Senha: `123456`
+
+   - Cliente (Maria)
+     - Email: `maria@email.com`
+     - Senha: `123456`
+
+   - Funcionário (Carlos)
+     - Email: `carlos@restaurant.com`
+     - Senha: `123456`
+
+   - Administrador
+     - Email: `admin@deliverysystem.com`
+     - Senha: `123456`
+
+   Observação: as senhas estão armazenadas como hash (`bcrypt`) no arquivo de desenvolvimento.
+
+   ---
+
+   ## Endpoints principais da API
+
+   Base: `http://localhost:3000/api`
+
+   - Autenticação
+     - `POST /api/auth/register` — Registrar usuário
+     - `POST /api/auth/login` — Login (retorna `{ token, user }`)
+     - `GET /api/auth/me` — Dados do usuário logado (requer `Authorization: Bearer <token>`)
+     - `GET /api/auth/users` — Listar usuários
+
+   - Produtos
+     - `GET /api/produtos` — Listar produtos (opcionais query: `restaurantId`, `categoryId`)
+     - `GET /api/produtos/:id` — Obter produto por id
+     - `POST /api/produtos` — Criar produto
+     - `PUT /api/produtos/:id` — Atualizar produto
+     - `DELETE /api/produtos/:id` — Deletar produto
+
+   - Pedidos
+     - `GET /api/pedidos` — Listar pedidos (opcionais query: `customerId`, `restaurantId`)
+     - `GET /api/pedidos/:id` — Obter pedido por id
+     - `POST /api/pedidos` — Criar pedido
+     - `PATCH /api/pedidos/:id/status` — Atualizar status do pedido
+     - `PUT /api/pedidos/:id` — Atualizar pedido completo
+
+   ---
+
+   ## Notas importantes
+
+   - Persistência: em desenvolvimento os dados ficam em `backend/src/data/*.json`. Em produção recomenda-se migrar para um banco (MySQL, Postgres etc.).
+   - Segurança: altere `JWT_SECRET` em `.env` antes de qualquer uso em produção.
+   - CORS: o backend permite requisições vindas do frontend (`localhost:5173`) por padrão.
+
+   ---
+
+   ## Ajuda e próximos passos
+
+   Se quiser, eu posso:
+
+   - Gerar migrations/estrutura SQL para migrar os JSONs para um banco relacional
+   - Adicionar validação de payload com `zod` ou `joi`
+   - Proteger endpoints administrativos com roles
+   - Criar testes automatizados para as rotas
+
+   Diga qual próximo passo prefere e eu continuo.
 
   ---
 
-  ## 2. Fluxo de execução do frontend
+  ## Documentação Completa (Frontend + Backend)
 
-  1. `main.tsx`
-     - Importa os estilos globais (`globals.css` + `index.css`).
-     - Renderiza o componente raiz `App` dentro da `div#root`.
+  **Objetivo do projeto**
 
-  2. `App.tsx`
-     - Envolve a árvore com `AuthProvider` e `CartProvider` para disponibilizar contexto em toda a aplicação.
-     - Usa o hook `useAuth()` para descobrir o usuário atual e o papel (`role`).
-     - Decide qual layout renderizar:
-       - Cliente → `ClientLayout`
-       - Funcionário → `EmployeeLayout`
-       - Admin → `AdminLayout`
-     - Controla a página atual (`currentPage`) com `useState` e passa `onNavigate` para as telas.
+  Este repositório implementa um sistema de delivery completo para fins acadêmicos e de prototipação. Ele contém:
 
-  3. Layouts
-     - Cada layout:
-       - Mostra cabeçalho (logo, informações do usuário logado, botão de logout).
-       - Mostra navegação própria (menu de abas/botões conforme o perfil).
-       - Renderiza o conteúdo da feature recebida via `children`.
+  - `frontend/`: aplicação React + Vite (TypeScript) — interface do usuário (clientes, funcionários, administradores).
+  - `backend/`: API em Node.js + Express + TypeScript — autenticação, gerenciamento de produtos e pedidos; persistência simples em arquivos JSON durante o desenvolvimento.
 
-  4. Features
-     - Cada tela de `features/*` consome:
-       - Dados do contexto (`useAuth`, `useCart`).
-       - Dados mockados de `shared/data/mockData`.
-       - Componentes visuais de `shared/ui`.
+  O objetivo é ter um fluxo de ponta a ponta que possa ser trocado por uma camada persistente real (MySQL) posteriormente.
+
+  **Visão geral das responsabilidades**
+
+  - Frontend: UI, gerenciamento de estado (autenticação, carrinho), integração com API REST.
+  - Backend: autenticação JWT, validação básica, regras de negócio, endpoints REST, persistência simples em `backend/src/data/*.json`.
 
   ---
 
-  ## 3. Como rodar o projeto
+  **Principais funcionalidades implementadas**
 
-  Na raiz do projeto existe a pasta `frontend/`, que contém o app React com Vite.
+  - Registo e login de usuários com senha hasheada (`bcryptjs`) e geração de token JWT.
+  - Perfis: cliente, funcionário, administrador.
+  - CRUD de produtos (criar, listar, atualizar, remover).
+  - Criação e gestão de pedidos (status do pedido: Pendente → Em preparo → Em trânsito → Entregue → Cancelado).
+  - Middleware de autenticação e autorização por roles.
+  - Integração do frontend com `frontend/src/shared/services/api.ts`.
 
-  ### 3.1. Instalar dependências
+  ---
 
-  ```bash
-  cd "sistema-delivery/frontend"
+  **Regras de negócio (resumo)**
+
+  1. Perfis e permissões
+     - `cliente`: pode ver produtos, criar pedidos, ver seus próprios pedidos, acompanhar status e gerenciar o carrinho.
+     - `funcionario`: pode ver pedidos do restaurante associado, alterar status (por exemplo, de Pendente para Em preparo), e gerenciar produtos relacionados ao restaurante.
+     - `admin`: pode listar/gerenciar todos usuários, produtos e pedidos.
+
+  2. Ciclo de vida do pedido
+     - Estados previsíveis: `PENDENTE`, `EM_PREPARO`, `EM_TRANSPORTE`, `ENTREGUE`, `CANCELADO`.
+     - Apenas `funcionario` ou `admin` podem mover pedidos entre certos estados (ex.: marcar como `EM_PREPARO` ou `EM_TRANSPORTE`).
+     - Clientes podem cancelar pedidos apenas quando o pedido estiver em `PENDENTE`.
+
+  3. Estoque e disponibilidade
+     - Cada produto tem um `stock` (estoque) opcional. Ao criar um pedido, validar disponibilidade e decrementar o estoque localmente.
+     - Produtos com `available: false` não aparecem na listagem pública.
+
+  4. Preço e descontos
+     - O preço final do item do pedido é calculado a partir do `price` do produto no momento do pedido (para evitar inconsistências em alterações futuras).
+     - Cupom/Desconto não implementado por padrão — pode ser adicionado como uma camada na criação do pedido.
+
+  5. Regras de consistência
+     - Todas as alterações de escrita (criar/atualizar/deletar) atualizam os arquivos JSON em `backend/src/data/` via utilitários (`lerJSON`, `salvarJSON`).
+     - Em ambiente real essas operações devem ser transacionais em BD relacional.
+
+  ---
+
+  ## Modelo de dados (simplificado)
+
+  - `User`
+    - `id`: string
+    - `name`: string
+    - `email`: string
+    - `passwordHash`: string
+    - `role`: `cliente` | `funcionario` | `admin`
+    - `restaurantId?`: string (para funcionários)
+
+  - `Product`
+    - `id`: string
+    - `name`: string
+    - `description`: string
+    - `price`: number
+    - `categoryId?`: string
+    - `restaurantId`: string
+    - `stock?`: number
+    - `available`: boolean
+
+  - `Order` (Pedido)
+    - `id`: string
+    - `customerId`: string
+    - `restaurantId`: string
+    - `items`: Array<{ productId, name, price, quantity }>
+    - `total`: number
+    - `status`: enum (`PENDENTE`, `EM_PREPARO`, `EM_TRANSPORTE`, `ENTREGUE`, `CANCELADO`)
+    - `createdAt`, `updatedAt`
+
+  ---
+
+  ## Endpoints principais da API (resumo)
+
+  Base: `http://localhost:3000/api`
+
+  - Autenticação
+    - `POST /api/auth/register` — registrar usuário: `{ name, email, password }` → retorna usuário (sem senha) e token JWT.
+    - `POST /api/auth/login` — `{ email, password }` → retorna `{ token, user }`.
+    - `GET /api/auth/me` — retorna dados do usuário autenticado (bearer token requerido).
+    - `GET /api/auth/users` — listar usuários (requer role `admin`).
+
+  - Produtos
+    - `GET /api/produtos` — listar produtos (suporta filtros `restaurantId`, `categoryId`).
+    - `GET /api/produtos/:id` — obter produto por id.
+    - `POST /api/produtos` — criar produto (requer auth e role adequada).
+    - `PUT /api/produtos/:id` — atualizar produto.
+    - `DELETE /api/produtos/:id` — remover produto.
+
+  - Pedidos
+    - `GET /api/pedidos` — listar pedidos (filtros: `customerId`, `restaurantId`).
+    - `GET /api/pedidos/:id` — obter pedido.
+    - `POST /api/pedidos` — criar pedido `{ customerId, restaurantId, items: [{ productId, quantity }] }`.
+    - `PATCH /api/pedidos/:id/status` — atualizar status do pedido `{ status }`.
+    - `PUT /api/pedidos/:id` — atualizar pedido completo (uso restrito).
+
+  Para payloads e respostas completas, confira os controladores em `backend/src/controller/`.
+
+  ---
+
+  ## Variáveis de ambiente
+
+  - Backend (`backend/.env`)
+    - `PORT` (opcional, default 3000)
+    - `JWT_SECRET` (muito importante: altere em produção)
+
+  - Frontend (`frontend/.env`)
+    - `VITE_API_URL` — URL base da API, ex.: `http://localhost:3000/api`
+
+  ---
+
+  ## Como rodar localmente (PowerShell)
+
+  Abra dois terminais: um para o backend e outro para o frontend.
+
+  Backend:
+
+  ```powershell
+  cd "c:\Users\maria\OneDrive\Área de Trabalho\Semestre 4\Ambiente de dados\sistema-delivery\backend"
   npm install
-  ```
-
-  ### 3.2. Rodar em modo desenvolvimento
-
-  ```bash
-  cd "sistema-delivery/frontend"
+  copy .env.example .env
+  # (opcional) editar .env para ajustar JWT_SECRET ou PORT
   npm run dev
   ```
 
-  O Vite iniciará o servidor (por padrão, porta 3000) e abrirá o navegador com o app.
+  Frontend:
+
+  ```powershell
+  cd "c:\Users\maria\OneDrive\Área de Trabalho\Semestre 4\Ambiente de dados\sistema-delivery\frontend"
+  npm install
+  # ajustar VITE_API_URL no .env se necessário
+  npm run dev
+  ```
+
+  O backend geralmente escuta em `http://localhost:3000` e o frontend em `http://localhost:5173`.
 
   ---
 
-  ## 4. Próximos passos (backend)
+  ## Usuários de teste (seed)
 
-  Para atender completamente aos requisitos técnicos da disciplina (JDBC + MySQL, DAO/Service/Controller, integridade referencial, etc.), o próximo passo é criar um backend em Node.js e Express.js que substitua os mocks:
+  Os usuários de teste estão em `backend/src/data/usuarios.json` e têm senhas `123456` (armazenadas como hash bcrypt). Exemplos:
 
-  - Mapear as entidades do `mockData.ts` para tabelas MySQL.
-  - Implementar DAOs com JSON para realizar CRUD nas tabelas.
-  - Implementar camada Service para regras de negócio.
-  - Implementar Controllers (por exemplo, REST) para expor APIs ao frontend.
-  - Trocar as chamadas mockadas no frontend por chamadas HTTP ao backend.
+  - Cliente: `joao@email.com` / `123456`
+  - Funcionário: `carlos@restaurant.com` / `123456`
+  - Admin: `admin@deliverysystem.com` / `123456`
 
-  Esta documentação explica a parte de frontend e como ela foi organizada para facilitar essa evolução futura.
-  
+  ---
+
+  ## Notas de desenvolvimento
+
+  - O backend utiliza leitura/escrita simples em JSON para facilitar testes. Em produção, mover para um banco relacional é necessário.
+  - As senhas devem ser sempre armazenadas como hash. Use `bcryptjs` para criação/validação.
+  - Proteja `JWT_SECRET` e configure CORS apenas para origens confiáveis.
+  - Adicionar `zod`/`joi` para validação de payloads melhora a segurança.
+
+  ---
+
+  ## Possíveis próximos passos (sugestões)
+
+  1. Migrar para MySQL: gerar scripts/DDL e implementar DAOs com transações.
+  2. Adicionar testes automatizados (Jest + Supertest) para endpoints críticos.
+  3. Adicionar integração contínua (GitHub Actions) para rodar lint/testes.
+  4. Implementar mecanismos de filas/notifications para atualização de status (ex.: WebSocket para notificar frontend quando pedido muda de status).
+  5. Implementar pagamentos simulados (ex.: integração com Stripe sandbox) e processo de confirmação.
+
+  ---
+
+  ## Contribuição
+
+  Se quiser contribuir:
+
+  1. Faça um fork e crie uma branch com `feat/<descrição>`.
+  2. Garanta que `npm run lint` e `npm run test` (se houver) rodem sem erros.
+  3. Abra um PR descrevendo a mudança e o motivo.
+
+  ---
+
+  Se quiser, eu posso:
+
+  - Gerar endpoints documentados no formato OpenAPI/Swagger.
+  - Gerar scripts de migração SQL para MySQL com base no modelo de dados.
+  - Criar testes básicos (Jest + Supertest) para as rotas principais.
+
+  Diga qual desses itens você prefere que eu implemente agora.
+  ### 3.1. Instalar dependências
+
