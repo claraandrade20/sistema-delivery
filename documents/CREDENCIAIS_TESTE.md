@@ -34,11 +34,43 @@
 
 ## 🧪 Como Usar
 
-1. Inicie o backend: `npm run dev` (na pasta `backend/`)
-2. Inicie o frontend: `npm run dev` (na pasta `frontend/`)
-3. Acesse `http://localhost:5173`
-4. Faça login com uma das credenciais acima
-5. Explore o sistema de acordo com o seu papel (cliente, funcionário ou admin)
+### 1️⃣ Testar Conexão com Banco de Dados
+
+Na pasta `backend/`, execute:
+```powershell
+node test-simple.js
+```
+
+Se retornar `Conexão bem-sucedida!`, o banco está funcionando.
+
+### 2️⃣ Iniciar o Backend
+
+Na pasta `backend/`:
+```powershell
+npm run dev
+```
+
+O servidor estará em `http://localhost:3000`
+
+### 3️⃣ Iniciar o Frontend
+
+Na pasta `frontend/`:
+```powershell
+npm run dev
+```
+
+O aplicativo estará em `http://localhost:5173`
+
+### 4️⃣ Fazer Login
+
+Acesse `http://localhost:5173` e faça login com uma das credenciais acima
+
+### 5️⃣ Explorar o Sistema
+
+Use o sistema de acordo com seu papel:
+- **Cliente**: Visualizar produtos, adicionar ao carrinho, fazer pedidos
+- **Funcionário**: Gerenciar produtos, estoque, pedidos do restaurante
+- **Admin**: Gerenciar usuários, restaurantes, sistema geral
 
 ---
 
