@@ -7,15 +7,71 @@ import { mockCategories, mockPromotions, getFeaturedProducts, mockRestaurants } 
 import { Star, Clock, TrendingUp, ArrowRight } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '/ui/carousel';
 
+// 1. Adicionado onSearch na interface
 interface ClientHomeProps {
   onNavigate: (page: string, data?: any) => void;
+  onSearch: (term: string) => void;
 }
 
-export const ClientHome = ({ onNavigate }: ClientHomeProps) => {
+export const ClientHome = ({ onNavigate, onSearch }: ClientHomeProps) => {
   const restaurant = mockRestaurants[0]; // Restaurante principal
   const categories = mockCategories.filter(c => c.restaurantId === restaurant.id);
   const featuredProducts = getFeaturedProducts(restaurant.id);
   const promotions = mockPromotions.filter(p => p.restaurantId === restaurant.id && p.isActive);
+
+  // 2. Função para lidar com o clique na promoção
+  const handlePromoClick = (promo: (typeof mockPromotions)[0]) => {
+    // Sempre limpa a busca textual para não conflitar com o filtro por categoria
+    onSearch('');
+
+    // Se a promoção já tiver categoryId definido no mock, usa direto
+    const promoAny = promo as any;
+    if (promoAny.categoryId) {
+      onNavigate('products', { categoryId: promoAny.categoryId });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Caso não tenha categoryId na promo, tenta descobrir pela descrição/título
+    const text = `${promo.title} ${promo.description || ''}`.toLowerCase();
+
+    // Mapeamento simples de palavras-chave -> palavra a ser procurada no nome da categoria
+    const keywordCategoryMap: { keyword: string; match: string }[] = [
+      { keyword: 'pizza', match: 'pizza' },
+      { keyword: 'combo', match: 'combo' },
+      { keyword: 'sobremesa', match: 'sobremesa' },
+      { keyword: 'grátis', match: 'sobremesa' },
+      { keyword: 'hambúrguer', match: 'hambúrguer' },
+      { keyword: 'hamburguer', match: 'hambúrguer' },
+      { keyword: 'burger', match: 'hambúrguer' },
+      { keyword: 'bebida', match: 'bebida' },
+      { keyword: 'refrigerante', match: 'bebida' },
+    ];
+
+    let categoryId: string | undefined;
+
+    for (const { keyword, match } of keywordCategoryMap) {
+      if (text.includes(keyword)) {
+        const category = categories.find(c =>
+          c.name.toLowerCase().includes(match)
+        );
+        if (category) {
+          categoryId = category.id;
+          break;
+        }
+      }
+    }
+
+    if (categoryId) {
+      onNavigate('products', { categoryId });
+    } else {
+      // Fallback: se não encontrou nenhuma categoria correspondente, vai para o cardápio completo
+      onNavigate('products');
+    }
+
+    // Rola para o topo suavemente
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   return (
     <div className="space-y-8">
@@ -62,7 +118,11 @@ export const ClientHome = ({ onNavigate }: ClientHomeProps) => {
             <CarouselContent>
               {promotions.map((promo) => (
                 <CarouselItem key={promo.id} className="md:basis-1/2 lg:basis-1/3">
-                  <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-shadow">
+                  {/* 3. Adicionado onClick no Card passando o objeto promo */}
+                  <Card
+                    className="overflow-hidden cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 h-full"
+                    onClick={() => handlePromoClick(promo)}
+                  >
                     <div className="relative">
                       <ImageWithFallback
                         src={promo.image}
@@ -77,7 +137,9 @@ export const ClientHome = ({ onNavigate }: ClientHomeProps) => {
                     </div>
                     <CardContent className="p-4">
                       <h3 className="font-bold text-gray-900">{promo.title}</h3>
-                      <p className="text-sm text-gray-600 mt-1">{promo.description}</p>
+                      <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                        {promo.description}
+                      </p>
                     </CardContent>
                   </Card>
                 </CarouselItem>
@@ -97,7 +159,11 @@ export const ClientHome = ({ onNavigate }: ClientHomeProps) => {
             <Card
               key={category.id}
               className="cursor-pointer hover:shadow-lg transition-all hover:scale-105"
-              onClick={() => onNavigate('products', { categoryId: category.id })}
+              // Ao clicar na categoria, limpa a busca e filtra por categoria (lógica existente)
+              onClick={() => {
+                onSearch(''); // Limpa busca textual para não conflitar
+                onNavigate('products', { categoryId: category.id });
+              }}
             >
               <CardContent className="p-4">
                 <ImageWithFallback
@@ -106,7 +172,9 @@ export const ClientHome = ({ onNavigate }: ClientHomeProps) => {
                   className="w-full h-24 object-cover rounded-lg mb-3"
                 />
                 <h3 className="text-center font-medium text-gray-900">{category.name}</h3>
-                <p className="text-xs text-center text-gray-500 mt-1">{category.description}</p>
+                <p className="text-xs text-center text-gray-500 mt-1">
+                  {category.description}
+                </p>
               </CardContent>
             </Card>
           ))}
@@ -122,7 +190,10 @@ export const ClientHome = ({ onNavigate }: ClientHomeProps) => {
           </div>
           <Button
             variant="ghost"
-            onClick={() => onNavigate('products')}
+            onClick={() => {
+              onSearch('');
+              onNavigate('products');
+            }}
             className="text-orange-600 hover:text-orange-700"
           >
             Ver tudo
@@ -133,7 +204,7 @@ export const ClientHome = ({ onNavigate }: ClientHomeProps) => {
           {featuredProducts.slice(0, 4).map((product) => (
             <Card
               key={product.id}
-              className="cursor-pointer hover:shadow-lg transition-shadow overflow-hidden"
+              className="cursor-pointer hover:shadow-lg transition-all hover:-translate-y-1 overflow-hidden"
               onClick={() => onNavigate('product-detail', { productId: product.id })}
             >
               <div className="relative">
@@ -151,7 +222,9 @@ export const ClientHome = ({ onNavigate }: ClientHomeProps) => {
               </div>
               <CardContent className="p-4">
                 <h3 className="font-bold text-gray-900 mb-1">{product.name}</h3>
-                <p className="text-sm text-gray-600 line-clamp-2 mb-3">{product.description}</p>
+                <p className="text-sm text-gray-600 line-clamp-2 mb-3">
+                  {product.description}
+                </p>
                 <div className="flex items-center justify-between">
                   <span className="font-bold text-orange-600">
                     A partir de R$ {product.variations[0].price.toFixed(2)}

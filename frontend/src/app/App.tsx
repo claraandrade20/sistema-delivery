@@ -39,10 +39,22 @@ function AppContent() {
   const { user, isAuthenticated } = useAuth();
   const [currentPage, setCurrentPage] = useState('home');
   const [pageData, setPageData] = useState<any>(null);
+  
+  // 1. Estado global da busca
+  const [searchTerm, setSearchTerm] = useState('');
 
   const navigate = (page: string, data?: any) => {
     setCurrentPage(page);
     setPageData(data || null);
+    
+    // Opcional: Limpar busca se voltar para a home, para não ficar "preso" no filtro antigo
+    if (page === 'home') {
+      setSearchTerm('');
+    }
+  };
+
+  const handleSearch = (term: string) => {
+    setSearchTerm(term);
   };
 
   if (!isAuthenticated) {
@@ -55,10 +67,21 @@ function AppContent() {
 
     switch (currentPage) {
       case 'home':
-        content = <ClientHome onNavigate={navigate} />;
+        content = (
+          <ClientHome 
+            onNavigate={navigate} 
+            onSearch={handleSearch} // <--- Passando a função de busca para os cards funcionarem
+          />
+        );
         break;
       case 'products':
-        content = <ProductsList onNavigate={navigate} initialCategoryId={pageData?.categoryId} />;
+        content = (
+          <ProductsList 
+            onNavigate={navigate} 
+            initialCategoryId={pageData?.categoryId} 
+            searchTerm={searchTerm} // <--- Passando o termo para filtrar a lista
+          />
+        );
         break;
       case 'product-detail':
         content = <ProductDetail productId={pageData?.productId} onNavigate={navigate} />;
@@ -79,11 +102,15 @@ function AppContent() {
         content = <ClientProfile />;
         break;
       default:
-        content = <ClientHome onNavigate={navigate} />;
+        content = <ClientHome onNavigate={navigate} onSearch={handleSearch} />;
     }
 
     return (
-      <ClientLayout currentPage={currentPage} onNavigate={navigate}>
+      <ClientLayout 
+        currentPage={currentPage} 
+        onNavigate={navigate}
+        onSearch={handleSearch} // <--- Conectando o Layout (barra de busca)
+      >
         {content}
       </ClientLayout>
     );

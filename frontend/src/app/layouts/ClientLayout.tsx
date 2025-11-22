@@ -51,17 +51,7 @@ export const ClientLayout = ({ children, currentPage, onNavigate }: ClientLayout
               </div>
             </div>
 
-            {/* Search - Desktop */}
-            <div className="hidden md:flex flex-1 max-w-lg mx-8">
-              <div className="relative w-full">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Buscar produtos..."
-                  className="pl-10"
-                />
-              </div>
-            </div>
-
+  
             {/* User Info */}
             <div className="flex items-center gap-4">
               <div className="hidden sm:block text-right">
@@ -78,17 +68,7 @@ export const ClientLayout = ({ children, currentPage, onNavigate }: ClientLayout
               </Button>
             </div>
           </div>
-
-          {/* Search - Mobile */}
-          <div className="md:hidden pb-3">
-            <div className="relative w-full">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Buscar produtos..."
-                className="pl-10"
-              />
-            </div>
-          </div>
+         
         </div>
       </header>
 
