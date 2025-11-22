@@ -297,22 +297,22 @@ async function runMigration() {
         // Inserir restaurantes padrão
         console.log("📤 Inserindo restaurantes...");
         await connection.execute(`INSERT IGNORE INTO restaurantes (id, nome, descricao, email, telefone, ativo)
-       VALUES ('rest-1', 'Pizzaria Bella Napoli', 'Melhor pizzaria da cidade', 'pizza@email.com', '8533333333', true)`);
+       VALUES ('1', 'Pizzaria Bella Napoli', 'Melhor pizzaria da cidade', 'pizza@email.com', '8533333333', true)`);
         console.log("✅ Restaurantes inseridos com sucesso!\n");
         // Inserir categorias padrão
         console.log("📤 Inserindo categorias...");
         await connection.execute(`INSERT IGNORE INTO categorias (id, nome, descricao, id_restaurante, ativo)
        VALUES 
-       ('cat-1', 'Pizzas', 'Pizzas deliciosas', 'rest-1', true),
-       ('cat-2', 'Bebidas', 'Bebidas variadas', 'rest-1', true)`);
+       ('1', 'Pizzas', 'Pizzas deliciosas', '1', true),
+       ('2', 'Bebidas', 'Bebidas variadas', '1', true)`);
         console.log("✅ Categorias inseridas com sucesso!\n");
         // Migrate Produtos com Variações e Adicionais
         if (fs_1.default.existsSync(produtosPath)) {
             const produtos = JSON.parse(fs_1.default.readFileSync(produtosPath, "utf-8"));
             console.log(`📤 Inserindo ${produtos.length} produtos...`);
             for (const produto of produtos) {
-                const categoryId = produto.categoryId || "cat-1";
-                const restaurantId = produto.restaurantId || "rest-1";
+                const categoryId = produto.categoryId || "1";
+                const restaurantId = produto.restaurantId || "1";
                 // Inserir produto
                 await connection.execute(`INSERT INTO produtos (id, nome, descricao, imagem, id_categoria, id_restaurante, quantidade_estoque, ativo, destaque, avaliacao, total_avaliacoes, tempo_preparo)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [

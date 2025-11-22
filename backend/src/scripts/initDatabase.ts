@@ -323,7 +323,7 @@ async function runMigration() {
     console.log("📤 Inserindo restaurantes...");
     await connection.execute(
       `INSERT IGNORE INTO restaurantes (id, nome, descricao, email, telefone, ativo)
-       VALUES ('rest-1', 'Pizzaria Bella Napoli', 'Melhor pizzaria da cidade', 'pizza@email.com', '8533333333', true)`
+       VALUES ('1', 'Pizzaria Bella Napoli', 'Melhor pizzaria da cidade', 'pizza@email.com', '8533333333', true)`
     );
     console.log("✅ Restaurantes inseridos com sucesso!\n");
 
@@ -332,8 +332,8 @@ async function runMigration() {
     await connection.execute(
       `INSERT IGNORE INTO categorias (id, nome, descricao, id_restaurante, ativo)
        VALUES 
-       ('cat-1', 'Pizzas', 'Pizzas deliciosas', 'rest-1', true),
-       ('cat-2', 'Bebidas', 'Bebidas variadas', 'rest-1', true)`
+       ('1', 'Pizzas', 'Pizzas deliciosas', '1', true),
+       ('2', 'Bebidas', 'Bebidas variadas', '1', true)`
     );
     console.log("✅ Categorias inseridas com sucesso!\n");
 
