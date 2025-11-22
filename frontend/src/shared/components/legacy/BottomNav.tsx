@@ -1,5 +1,5 @@
 import { Home, ShoppingCart, ClipboardList, User } from 'lucide-react';
-import { Badge } from './ui/badge';
+import { Badge } from '@shared/ui/badge';
 
 interface BottomNavProps {
   currentScreen: string;

@@ -9,7 +9,7 @@ export async function getEnderecos(req: Request, res: Response) {
     const params: any[] = [];
 
     if (userId) {
-      query += " WHERE usuario_id = ?";
+      query += " WHERE id_cliente = ?";
       params.push(userId);
     }
 
@@ -39,22 +39,22 @@ export async function getEnderecoById(req: Request, res: Response) {
 
 export async function postEndereco(req: Request, res: Response) {
   try {
-    const { userId, cep, street, number, complement, district, city, state } = req.body;
+    const { userId, street, number, complement, district, city, state } = req.body;
 
-    if (!userId || !cep || !street || !number || !district || !city || !state) {
+    if (!userId || !street || !number || !district) {
       return res.status(400).json({ erro: "Dados obrigatórios faltando" });
     }
 
     const id = crypto.randomUUID();
-    const createdAt = new Date().toISOString();
+    const endereco = `${street}, ${number} - ${district}, ${city}/${state}`;
 
     const [result] = await pool.query(
-      `INSERT INTO enderecos (id, usuario_id, cep, endereco, numero, complemento, bairro, cidade, estado, criado_em)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, userId, cep, street, number, complement || null, district, city, state, createdAt]
+      `INSERT INTO enderecos (id, id_cliente, rua, numero, complemento, bairro, endereco)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [id, userId, street, number, complement || null, district, endereco]
     );
 
-    res.status(201).json({ id, userId, cep, street, number, complement, district, city, state, createdAt });
+    res.status(201).json({ id, userId, street, number, complement, district, city, state });
   } catch (error: any) {
     console.error("Erro ao criar endereço:", error);
     res.status(400).json({ erro: error.message });
@@ -64,13 +64,15 @@ export async function postEndereco(req: Request, res: Response) {
 export async function putEndereco(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const { cep, street, number, complement, district, city, state } = req.body;
+    const { street, number, complement, district, city, state } = req.body;
+
+    const endereco = `${street}, ${number} - ${district}, ${city}/${state}`;
 
     await pool.query(
       `UPDATE enderecos 
-       SET cep = ?, endereco = ?, numero = ?, complemento = ?, bairro = ?, cidade = ?, estado = ?
+       SET rua = ?, numero = ?, complemento = ?, bairro = ?, endereco = ?
        WHERE id = ?`,
-      [cep, street, number, complement || null, district, city, state, id]
+      [street, number, complement || null, district, endereco, id]
     );
 
     const [rows] = await pool.query("SELECT * FROM enderecos WHERE id = ?", [id]);
@@ -90,7 +92,7 @@ export async function deleteEndereco(req: Request, res: Response) {
   try {
     const { id } = req.params;
 
-    const [result] = await pool.query("DELETE FROM enderecos WHERE id = ?", [id]);
+    await pool.query("DELETE FROM enderecos WHERE id = ?", [id]);
 
     res.json({ mensagem: "Endereço deletado com sucesso", id });
   } catch (error: any) {

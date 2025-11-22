@@ -1,6 +1,6 @@
 import { ArrowLeft, Clock, CheckCircle, Truck, Package } from 'lucide-react';
-import { Card, CardContent } from './ui/card';
-import { Badge } from './ui/badge';
+import { Card, CardContent } from '@shared/ui/card';
+import { Badge } from '@shared/ui/badge';
 
 interface OrdersScreenProps {
   onBack: () => void;

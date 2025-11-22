@@ -1,16 +1,16 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '/ui/card';
-import { Button } from '/ui/button';
-import { Input } from '/ui/input';
-import { Label } from '/ui/label';
-import { RadioGroup, RadioGroupItem } from '/ui/radio-group';
-import { Textarea } from '/ui/textarea';
-import { useCart } from '/context/CartContext';
-import { useAuth } from '/context/AuthContext';
-import { mockRestaurants, getUserAddresses } from '/data/mockData';
-import { toast } from 'sonner@2.0.3';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Input } from '@shared/ui/input';
+import { Label } from '@shared/ui/label';
+import { RadioGroup, RadioGroupItem } from '@shared/ui/radio-group';
+import { Textarea } from '@shared/ui/textarea';
+import { useCart } from '@shared/context/CartContext';
+import { useAuth } from '@shared/context/AuthContext';
+import { mockRestaurants, getUserAddresses } from '@shared/data/mockData';
+import { toast } from 'sonner';
 import { CreditCard, Smartphone, Ticket, Wallet, MapPin, Check } from 'lucide-react';
-import type { PaymentMethod } from '/types';
+import type { PaymentMethod } from '@shared/types';
 
 interface CheckoutProps {
   onNavigate: (page: string, data?: any) => void;

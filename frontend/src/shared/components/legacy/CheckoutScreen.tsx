@@ -1,11 +1,13 @@
-import { useState } from 'react';
-import { ArrowLeft, CreditCard, Smartphone, Wallet, MapPin, CheckCircle } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
-import { Input } from './ui/input';
-import { Label } from './ui/label';
-import { Separator } from './ui/separator';
-import { CartItem } from '../types';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, CreditCard, Smartphone, Wallet, MapPin, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { Button } from '@shared/ui/button';
+import { Card, CardContent } from '@shared/ui/card';
+import { Input } from '@shared/ui/input';
+import { Label } from '@shared/ui/label';
+import { Separator } from '@shared/ui/separator';
+import type { CartItem, Address, PaymentMethod } from '@shared/types';
+import api from '@shared/services/api';
+import { useAuth } from '@shared/context/AuthContext';
 
 interface CheckoutScreenProps {
   cartItems: CartItem[];
@@ -14,28 +16,99 @@ interface CheckoutScreenProps {
 }
 
 export function CheckoutScreen({ cartItems, onBack, onCheckout }: CheckoutScreenProps) {
-  const [paymentMethod, setPaymentMethod] = useState<'credit' | 'pix' | 'voucher'>('credit');
+  const { user } = useAuth();
+  const [paymentMethod, setPaymentMethod] = useState<'credit_card' | 'pix' | 'meal_voucher'>('credit_card');
   const [showSuccess, setShowSuccess] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [loadingAddresses, setLoadingAddresses] = useState(true);
 
-  const subtotal = cartItems.reduce((sum, item) => {
-    const price = item.selectedSize ? item.selectedSize.price : item.product.price;
-    return sum + price * item.quantity;
-  }, 0);
+  // Carregar endereços ao montar
+  useEffect(() => {
+    const loadAddresses = async () => {
+      if (!user?.id) {
+        setLoadingAddresses(false);
+        return;
+      }
+
+      try {
+        const data = await api.enderecos.listar({ userId: user.id });
+        setAddresses(data || []);
+        // Selecionar endereço padrão
+        const defaultAddress = (data || []).find((a: Address) => a.isDefault);
+        if (defaultAddress) {
+          setSelectedAddressId(defaultAddress.id);
+        }
+      } catch (err) {
+        console.error('Erro ao carregar endereços:', err);
+        setError('Erro ao carregar endereços');
+      } finally {
+        setLoadingAddresses(false);
+      }
+    };
+
+    loadAddresses();
+  }, [user]);
+
+  const subtotal = cartItems.reduce((sum, item) => sum + item.subtotal, 0);
 
   const deliveryFee = 8.90;
   const total = subtotal + deliveryFee;
 
   const paymentMethods = [
-    { id: 'credit' as const, name: 'Cartão de Crédito', icon: CreditCard },
+    { id: 'credit_card' as const, name: 'Cartão de Crédito', icon: CreditCard },
     { id: 'pix' as const, name: 'Pix', icon: Smartphone },
-    { id: 'voucher' as const, name: 'Vale Refeição', icon: Wallet },
+    { id: 'meal_voucher' as const, name: 'Vale Refeição', icon: Wallet },
   ];
 
-  const handleFinishOrder = () => {
-    setShowSuccess(true);
-    setTimeout(() => {
-      onCheckout();
-    }, 2000);
+  const handleFinishOrder = async () => {
+    if (!user || !selectedAddressId) {
+      setError('Selecione um endereço de entrega');
+      return;
+    }
+
+    if (!paymentMethod) {
+      setError('Selecione um método de pagamento');
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Preparar dados do pedido
+      const orderData = {
+        customerId: user.id,
+        customerName: user.name,
+        customerPhone: user.phone,
+        deliveryAddressId: selectedAddressId,
+        items: cartItems.map(item => ({
+          productId: item.productId,
+          variationId: item.variationId,
+          addons: item.addons,
+          quantity: item.quantity,
+          subtotal: item.subtotal,
+        })),
+        paymentMethod: paymentMethod as PaymentMethod,
+        subtotal,
+        deliveryFee,
+        total,
+        status: 'received' as const,
+      };
+
+      // Criar pedido no backend
+      await api.pedidos.criar(orderData);
+
+      setShowSuccess(true);
+      setTimeout(() => {
+        onCheckout();
+      }, 2000);
+    } catch (err: any) {
+      setError(err.message || 'Erro ao confirmar pedido');
+      setLoading(false);
+    }
   };
 
   if (showSuccess) {
@@ -72,6 +145,13 @@ export function CheckoutScreen({ cartItems, onBack, onCheckout }: CheckoutScreen
       </div>
 
       <div className="p-4 space-y-6">
+        {error && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex gap-3">
+            <AlertCircle className="size-5 text-red-600 flex-shrink-0 mt-0.5" />
+            <p className="text-red-700">{error}</p>
+          </div>
+        )}
+
         {/* Order Summary */}
         <Card>
           <CardContent className="p-4">
@@ -83,18 +163,17 @@ export function CheckoutScreen({ cartItems, onBack, onCheckout }: CheckoutScreen
                     <p className="text-gray-900">
                       {item.quantity}x {item.product.name}
                     </p>
-                    {item.selectedSize && (
-                      <p className="text-sm text-gray-500">
-                        Tamanho: {item.selectedSize.name}
+                    <p className="text-sm text-gray-500">
+                      Variação: {item.variation.name}
+                    </p>
+                    {item.addons.length > 0 && (
+                      <p className="text-xs text-gray-400">
+                        Adicionais: {item.addons.map((a: any) => a.name).join(', ')}
                       </p>
                     )}
                   </div>
                   <p className="text-gray-900">
-                    R${' '}
-                    {(
-                      (item.selectedSize?.price || item.product.price) *
-                      item.quantity
-                    ).toFixed(2)}
+                    R$ {item.subtotal.toFixed(2)}
                   </p>
                 </div>
               ))}
@@ -127,20 +206,50 @@ export function CheckoutScreen({ cartItems, onBack, onCheckout }: CheckoutScreen
           <CardContent className="p-4">
             <div className="flex items-center justify-between mb-3">
               <h2 className="text-gray-900">Endereço de Entrega</h2>
-              <button className="text-sm text-orange-600 hover:underline">
-                Editar
-              </button>
             </div>
-            <div className="flex items-start gap-3">
-              <MapPin className="size-5 text-gray-400 mt-1" />
-              <div>
-                <p className="text-gray-900">Rua das Flores, 123</p>
-                <p className="text-sm text-gray-500">
-                  Jardim Japones - Fortaleza, CE
-                </p>
-                <p className="text-sm text-gray-500">CEP: 01234-567</p>
+            
+            {loadingAddresses ? (
+              <div className="flex items-center justify-center py-6">
+                <Loader className="size-5 text-orange-600 animate-spin" />
               </div>
-            </div>
+            ) : addresses.length === 0 ? (
+              <p className="text-gray-500 text-sm">Nenhum endereço cadastrado</p>
+            ) : (
+              <div className="space-y-2">
+                {addresses.map((address) => (
+                  <button
+                    key={address.id}
+                    onClick={() => setSelectedAddressId(address.id)}
+                    className={`w-full p-3 rounded-lg border-2 transition-all text-left ${
+                      selectedAddressId === address.id
+                        ? 'border-orange-500 bg-orange-50'
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                  >
+                    <div className="flex items-start gap-3">
+                      <MapPin className="size-5 text-gray-400 mt-0.5" />
+                      <div className="flex-1">
+                        <p className="text-gray-900 font-medium">
+                          {address.street}, {address.number}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {address.neighborhood} - {address.city}, {address.state}
+                        </p>
+                        <p className="text-sm text-gray-500">CEP: {address.zipCode}</p>
+                        {address.complement && (
+                          <p className="text-xs text-gray-400">Complemento: {address.complement}</p>
+                        )}
+                      </div>
+                      {address.isDefault && (
+                        <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                          Padrão
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -169,7 +278,7 @@ export function CheckoutScreen({ cartItems, onBack, onCheckout }: CheckoutScreen
             </div>
 
             {/* Credit Card Form */}
-            {paymentMethod === 'credit' && (
+            {paymentMethod === 'credit_card' && (
               <div className="space-y-4 mt-4 pt-4 border-t border-gray-200">
                 <div className="space-y-2">
                   <Label htmlFor="cardNumber">Número do Cartão</Label>
@@ -212,9 +321,17 @@ export function CheckoutScreen({ cartItems, onBack, onCheckout }: CheckoutScreen
         {/* Finish Order Button */}
         <Button
           onClick={handleFinishOrder}
-          className="w-full bg-green-600 hover:bg-green-700 h-14"
+          disabled={loading || loadingAddresses || addresses.length === 0}
+          className="w-full bg-green-600 hover:bg-green-700 h-14 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Finalizar Pedido - R$ {total.toFixed(2)}
+          {loading ? (
+            <div className="flex items-center justify-center gap-2">
+              <Loader className="size-5 animate-spin" />
+              Processando...
+            </div>
+          ) : (
+            `Confirmar Pedido - R$ ${total.toFixed(2)}`
+          )}
         </Button>
       </div>
     </div>

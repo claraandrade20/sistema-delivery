@@ -1,10 +1,10 @@
 import { useState } from 'react';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
-import { Badge } from './ui/badge';
-import { Product, CartItem } from '../types';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Button } from '@shared/ui/button';
+import { Card, CardContent } from '@shared/ui/card';
+import { Badge } from '@shared/ui/badge';
+import { Product, CartItem } from '@shared/types';
+import { ImageWithFallback } from '@shared/components/figma/ImageWithFallback';
 
 interface ProductDetailScreenProps {
   product: Product;

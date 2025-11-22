@@ -1,7 +1,7 @@
 import { ArrowLeft, User, MapPin, CreditCard, Settings, HelpCircle, LogOut, ShieldCheck } from 'lucide-react';
-import { Card, CardContent } from './ui/card';
-import { Avatar, AvatarFallback } from './ui/avatar';
-import { Separator } from './ui/separator';
+import { Card, CardContent } from '@shared/ui/card';
+import { Avatar, AvatarFallback } from '@shared/ui/avatar';
+import { Separator } from '@shared/ui/separator';
 
 interface ProfileScreenProps {
   onBack: () => void;

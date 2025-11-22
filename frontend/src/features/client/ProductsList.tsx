@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Card, CardContent } from '/ui/card';
-import { Button } from '/ui/button';
-import { Badge } from '/ui/badge';
-import { Input } from '/ui/input';
-import { ImageWithFallback } from '/components/figma/ImageWithFallback';
-import { mockProducts, mockCategories, mockRestaurants } from '/data/mockData';
+import { Card, CardContent } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Badge } from '@shared/ui/badge';
+import { Input } from '@shared/ui/input';
+import { ImageWithFallback } from '@shared/components/figma/ImageWithFallback';
+import { mockProducts, mockCategories, mockRestaurants } from '@shared/data/mockData';
 import { Star, Clock, Search, Filter } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
 
 interface ProductsListProps {
   onNavigate: (page: string, data?: any) => void;

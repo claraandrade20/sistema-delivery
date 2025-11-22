@@ -1,9 +1,9 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '/ui/card';
-import { Button } from '/ui/button';
-import { mockOrders } from '/data/mockData';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { mockOrders } from '@shared/data/mockData';
 import { Package, Clock, Truck, CheckCircle, MapPin, Phone } from 'lucide-react';
-import type { OrderStatus } from '/types';
+import type { OrderStatus } from '@shared/types';
 
 interface OrderTrackingProps {
   orderId: string;

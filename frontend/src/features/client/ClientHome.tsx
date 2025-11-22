@@ -1,11 +1,11 @@
 import React from 'react';
-import { Card, CardContent } from '/ui/card';
-import { Button } from '/ui/button';
-import { Badge } from '/ui/badge';
-import { ImageWithFallback } from '/components/figma/ImageWithFallback';
-import { mockCategories, mockPromotions, getFeaturedProducts, mockRestaurants } from '/data/mockData';
+import { Card, CardContent } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Badge } from '@shared/ui/badge';
+import { ImageWithFallback } from '@shared/components/figma/ImageWithFallback';
+import { mockCategories, mockPromotions, getFeaturedProducts, mockRestaurants } from '@shared/data/mockData';
 import { Star, Clock, TrendingUp, ArrowRight } from 'lucide-react';
-import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '/ui/carousel';
+import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@shared/ui/carousel';
 
 // 1. Adicionado onSearch na interface
 interface ClientHomeProps {
