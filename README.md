@@ -2,8 +2,6 @@
 
 Projeto full-stack de um sistema de delivery para fins acadêmicos e de prototipação. Inclui frontend React + Vite e backend Node.js + Express com autenticação JWT, CRUD de produtos e pedidos.
 
-**Design original**: https://www.figma.com/design/oatGs6kVSQl45Sdo1r6Lcg/Food-Delivery-App-Design
-
 ---
 
 ## 📋 Sobre o Projeto
