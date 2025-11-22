@@ -125,10 +125,10 @@ Usuários cadastrados em `backend/src/data/usuarios.json` (senha: `123456`):
 
 | Email | Senha | Perfil |
 |-------|-------|--------|
-| joao@email.com | 123456 | Cliente |
-| maria@email.com | 123456 | Cliente |
-| carlos@restaurant.com | 123456 | Funcionário |
-| admin@deliverysystem.com | 123456 | Administrador |
+| joao@email.com | joao123 | Cliente |
+| maria@email.com | maria456 | Cliente |
+| carlos@restaurant.com | carlos789 | Funcionário |
+| admin@deliverysystem.com | admin123 | Administrador |
 
 > As senhas estão armazenadas como hash bcrypt.
 
