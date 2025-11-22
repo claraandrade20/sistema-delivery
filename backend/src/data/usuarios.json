@@ -49,5 +49,45 @@
     "role": "client",
     "createdAt": "2025-11-18T21:20:19.607Z",
     "isActive": true
+  },
+  {
+    "id": "client-1763724376601",
+    "name": "rafael lopes",
+    "email": "rafaellopes250106@gmail.com",
+    "password": "$2a$10$Tdc6XPD4G4Tv1Psz.f1O/.p42UU.2OnkTUP1WR1utW8WjxKa/1NSq",
+    "phone": "rafaellopes250106@gmail.com",
+    "role": "client",
+    "createdAt": "2025-11-21T11:26:16.601Z",
+    "isActive": true
+  },
+  {
+    "id": "client-1763724897316",
+    "name": "rafael ",
+    "email": "rafaellopes25016@gmail.com",
+    "password": "$2a$10$vjH6oocj769YPmBHOHn6GObVg0DeYQLZsjOGzrCLwUR5i/QZM7wAa",
+    "phone": "85992127498",
+    "role": "client",
+    "createdAt": "2025-11-21T11:34:57.316Z",
+    "isActive": true
+  },
+  {
+    "id": "client-1763725356435",
+    "name": "lopes",
+    "email": "rafaellopes2501@gmail.com",
+    "password": "$2a$10$aTd2bWdntuSYOsFAc5BYN.N5FFHsrWRthLr7CVu9LFuPKUxC8HyJC",
+    "phone": "rafaellopes250106@gmail.com",
+    "role": "client",
+    "createdAt": "2025-11-21T11:42:36.435Z",
+    "isActive": true
+  },
+  {
+    "id": "client-1763725734183",
+    "name": "rafael lopes",
+    "email": "rafaellopes250@lopes.com",
+    "password": "$2a$10$T7CSqmmE7VAxkPAn8IctA.vkOzhlWnHg6SyETz9z7ZcdHkXnPu1Ry",
+    "phone": "(85) 99212-7498",
+    "role": "client",
+    "createdAt": "2025-11-21T11:48:54.183Z",
+    "isActive": true
   }
 ]

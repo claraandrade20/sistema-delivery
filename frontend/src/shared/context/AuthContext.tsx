@@ -65,8 +65,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(newUser);
       return true;
     } catch (error) {
-      console.error('Erro no registro:', error);
-      return false;
+      // MUDANÇA AQUI:
+      // Ao invés de "return false", nós jogamos o erro para quem chamou (Login.tsx)
+      console.error('Erro no registro (Context):', error);
+      throw error; 
     }
   };
 

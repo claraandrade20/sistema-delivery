@@ -13,7 +13,10 @@ interface LoginProps {
 }
 
 export const Login = ({ onSuccess }: LoginProps) => {
-  const { login, register } = useAuth();
+  const { login, register, logout } = useAuth();
+  
+  // Controle da Aba Ativa
+  const [activeTab, setActiveTab] = useState('login');
   
   // Login state
   const [loginEmail, setLoginEmail] = useState('');
@@ -31,6 +34,17 @@ export const Login = ({ onSuccess }: LoginProps) => {
   const [showRecovery, setShowRecovery] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
+
+  // === MÁSCARA DE TELEFONE ===
+  const formatPhone = (value: string) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    const truncated = numbers.slice(0, 11);
+    
+    if (truncated.length <= 2) return truncated;
+    if (truncated.length <= 7) return `(${truncated.slice(0, 2)}) ${truncated.slice(2)}`;
+    return `(${truncated.slice(0, 2)}) ${truncated.slice(2, 7)}-${truncated.slice(7)}`;
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,11 +71,63 @@ export const Login = ({ onSuccess }: LoginProps) => {
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // === 1. Validar Vazios ===
     if (!registerName || !registerEmail || !registerPhone || !registerPassword || !confirmPassword) {
       toast.error('Preencha todos os campos');
       return;
     }
     
+    // === 2. Validar Nome ===
+    if (/\d/.test(registerName)) {
+      toast.error('O nome não pode conter números');
+      return;
+    }
+    if (registerName.trim().split(' ').length < 2) {
+      toast.error('Digite seu nome completo (Nome e Sobrenome)');
+      return;
+    }
+    
+    // === 3. Validar Email e Domínio ===
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(registerEmail)) {
+      toast.error('Digite um e-mail válido');
+      return;
+    }
+
+    // Lista de domínios permitidos
+    const allowedDomains = [
+      'gmail.com', 
+      'hotmail.com', 'hotmail.com.br',
+      'outlook.com', 'outlook.com.br',
+      'yahoo.com', 'yahoo.com.br',
+      'live.com',
+      'icloud.com',
+      'uol.com.br',
+      'bol.com.br',
+      'terra.com.br'
+    ];
+
+    const emailDomain = registerEmail.split('@')[1]?.toLowerCase();
+
+    if (!allowedDomains.includes(emailDomain)) {
+      toast.error('Use um e-mail pessoal válido (Gmail, Hotmail, Outlook, Yahoo, etc).');
+      return;
+    }
+
+    // === 4. Validar Telefone ===
+    const cleanPhone = registerPhone.replace(/\D/g, '');
+    
+    if (cleanPhone.length !== 11) {
+      toast.error('O telefone deve ter 11 dígitos (DDD + 9 números)');
+      return;
+    }
+    
+    if (cleanPhone[2] !== '9') {
+      toast.error('O celular deve começar com o dígito 9. Ex: (85) 9...');
+      return;
+    }
+    
+    // === 5. Validar Senhas ===
     if (registerPassword !== confirmPassword) {
       toast.error('As senhas não coincidem');
       return;
@@ -74,27 +140,53 @@ export const Login = ({ onSuccess }: LoginProps) => {
 
     setIsLoading(true);
     
-    const success = await register(registerName, registerEmail, registerPhone, registerPassword);
-    
-    setIsLoading(false);
-    
-    if (success) {
-      toast.success('Conta criada com sucesso!');
-      onSuccess();
-    } else {
-      toast.error('Erro ao criar conta');
+    try {
+      // Tenta registrar
+      const result = await register(registerName, registerEmail, registerPhone, registerPassword);
+      
+      // Fallback de segurança se o AuthContext não lançar erro
+      if (result === false) throw new Error('Falha no registro');
+
+      // === SUCESSO ===
+      if (logout) await logout(); // Garante que não loga automático
+      
+      toast.success('Conta criada! Faça login para continuar.');
+      
+      setLoginEmail(registerEmail); // Preenche login
+      setRegisterPassword('');
+      setConfirmPassword('');
+      setActiveTab('login'); // Muda aba
+      
+    } catch (error: any) {
+      // === TRATAMENTO DE ERRO ===
+      console.error("Erro capturado no registro:", error);
+      const errorMessage = (error?.message || error?.toString() || '').toLowerCase();
+
+      if (
+        errorMessage.includes('já cadastrado') || 
+        errorMessage.includes('email already exists') || 
+        errorMessage.includes('already-in-use') ||
+        errorMessage.includes('duplicate') ||
+        errorMessage.includes('409')
+      ) {
+        toast.error('Este e-mail já possui cadastro. Faça login.');
+        setLoginEmail(registerEmail);
+        setActiveTab('login');
+      } 
+      else {
+        toast.error('Erro ao criar conta. Verifique os dados.');
+      }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
-    
     if (!recoveryEmail) {
       toast.error('Digite seu email');
       return;
     }
-    
-    // Simulação de recuperação
     toast.success('Instruções enviadas para seu email!');
     setShowRecovery(false);
     setRecoveryEmail('');
@@ -161,7 +253,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
           <CardDescription>Faça login ou crie sua conta</CardDescription>
         </CardHeader>
         <CardContent>
-          <Tabs defaultValue="login" className="w-full">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login">Entrar</TabsTrigger>
               <TabsTrigger value="register">Criar Conta</TabsTrigger>
@@ -251,7 +343,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
                     <Input
                       id="register-email"
                       type="email"
-                      placeholder="seu@email.com"
+                      placeholder="seu@gmail.com"
                       className="pl-10"
                       value={registerEmail}
                       onChange={(e) => setRegisterEmail(e.target.value)}
@@ -269,7 +361,9 @@ export const Login = ({ onSuccess }: LoginProps) => {
                       placeholder="(85) 98765-4321"
                       className="pl-10"
                       value={registerPhone}
-                      onChange={(e) => setRegisterPhone(e.target.value)}
+                      // MÁSCARA AUTOMÁTICA
+                      onChange={(e) => setRegisterPhone(formatPhone(e.target.value))}
+                      maxLength={15}
                     />
                   </div>
                 </div>
