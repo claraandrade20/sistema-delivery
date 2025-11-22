@@ -43,13 +43,13 @@ async function runMigration() {
     console.log("📋 Criando tabela USUARIOS...");
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS usuarios (
-        id VARCHAR(50) PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         nome VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         senha VARCHAR(255) NOT NULL,
         telefone VARCHAR(100),
         funcao ENUM('funcionario', 'administrador') NOT NULL,
-        id_restaurante VARCHAR(50),
+        id_restaurante INT NOT NULL,
         ativo BOOLEAN DEFAULT true,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
         atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -63,7 +63,7 @@ async function runMigration() {
     console.log("📋 Criando tabela CLIENTES...");
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS clientes (
-        id VARCHAR(50) PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         nome VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         senha VARCHAR(255) NOT NULL,
@@ -80,8 +80,8 @@ async function runMigration() {
     console.log("📋 Criando tabela ENDERECOS...");
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS enderecos (
-        id VARCHAR(50) PRIMARY KEY,
-        id_cliente VARCHAR(50) NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        id_cliente INT NOT NULL,
         rua VARCHAR(255) NOT NULL,
         numero VARCHAR(20) NOT NULL,
         complemento VARCHAR(255),
@@ -99,7 +99,7 @@ async function runMigration() {
     console.log("📋 Criando tabela RESTAURANTES...");
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS restaurantes (
-        id VARCHAR(50) PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         nome VARCHAR(255) NOT NULL,
         descricao TEXT,
         imagem VARCHAR(500),
@@ -118,7 +118,7 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS horario_funcionamento (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        id_restaurante VARCHAR(50) NOT NULL,
+        id_restaurante INT NOT NULL,
         dia_semana TINYINT NOT NULL,
         nome_dia VARCHAR(20) NOT NULL,
         hora_inicio TIME DEFAULT NULL,
@@ -137,10 +137,10 @@ async function runMigration() {
     console.log("📋 Criando tabela CATEGORIAS...");
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS categorias (
-        id VARCHAR(50) PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         nome VARCHAR(255) NOT NULL,
         descricao TEXT,
-        id_restaurante VARCHAR(50) NOT NULL,
+        id_restaurante INT NOT NULL,
         ativo BOOLEAN DEFAULT true,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (id_restaurante) REFERENCES restaurantes(id) ON DELETE CASCADE,
@@ -153,12 +153,12 @@ async function runMigration() {
     console.log("📋 Criando tabela PRODUTOS...");
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS produtos (
-        id VARCHAR(50) PRIMARY KEY,
+        id INT AUTO_INCREMENT PRIMARY KEY,
         nome VARCHAR(255) NOT NULL,
         descricao TEXT,
         imagem VARCHAR(500),
-        id_categoria VARCHAR(50) NOT NULL,
-        id_restaurante VARCHAR(50) NOT NULL,
+        id_categoria INT NOT NULL,
+        id_restaurante INT NOT NULL,
         quantidade_estoque INT DEFAULT 0,
         ativo BOOLEAN DEFAULT true,
         destaque BOOLEAN DEFAULT false,
@@ -180,8 +180,8 @@ async function runMigration() {
     console.log("📋 Criando tabela VARIACOES...");
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS variacoes (
-        id VARCHAR(50) PRIMARY KEY,
-        id_produto VARCHAR(50) NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        id_produto INT NOT NULL,
         nome VARCHAR(255) NOT NULL,
         preco DECIMAL(10,2) NOT NULL,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -195,8 +195,8 @@ async function runMigration() {
     console.log("📋 Criando tabela ADICIONAIS...");
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS adicionais (
-        id VARCHAR(50) PRIMARY KEY,
-        id_produto VARCHAR(50) NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        id_produto INT NOT NULL,
         nome VARCHAR(255) NOT NULL,
         preco DECIMAL(10,2) NOT NULL,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -210,11 +210,11 @@ async function runMigration() {
     console.log("📋 Criando tabela PEDIDOS...");
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS pedidos (
-        id VARCHAR(50) PRIMARY KEY,
-        id_cliente VARCHAR(50) NOT NULL,
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        id_cliente INT NOT NULL,
         nome_cliente VARCHAR(255),
         telefone_cliente VARCHAR(20),
-        id_restaurante VARCHAR(50) NOT NULL,
+        id_restaurante INT NOT NULL,
         nome_restaurante VARCHAR(255),
         metodo_pagamento VARCHAR(50),
         subtotal DECIMAL(10,2) NOT NULL,
@@ -240,10 +240,10 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS itens_pedido (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        id_pedido VARCHAR(50) NOT NULL,
-        id_produto VARCHAR(50) NOT NULL,
+        id_pedido INT NOT NULL,
+        id_produto INT NOT NULL,
         nome_produto VARCHAR(255),
-        id_variacao VARCHAR(50),
+        id_variacao INT,
         nome_variacao VARCHAR(255),
         quantidade INT NOT NULL,
         subtotal DECIMAL(10,2) NOT NULL,
