@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '/ui/card';
-import { Button } from '/ui/button';
-import { Input } from '/ui/input';
-import { Switch } from '/ui/switch';
-import { Label } from '/ui/label';
-import { mockRestaurants } from '/data/mockData';
-import { toast } from 'sonner@2.0.3';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Input } from '@shared/ui/input';
+import { Switch } from '@shared/ui/switch';
+import { Label } from '@shared/ui/label';
+import { mockRestaurants } from '@shared/data/mockData';
+import { toast } from 'sonner';
 import { Clock } from 'lucide-react';
 
 const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
@@ -38,7 +38,7 @@ export const BusinessHoursManagement = () => {
               <div className="flex items-center gap-2">
                 <Switch
                   checked={day.isOpen}
-                  onCheckedChange={(checked) => {
+                  onCheckedChange={(checked: boolean) => {
                     const newHours = [...hours];
                     newHours[index].isOpen = checked;
                     setHours(newHours);

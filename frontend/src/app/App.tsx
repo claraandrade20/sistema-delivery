@@ -31,6 +31,9 @@ import { BusinessHoursManagement } from '@features/employee/BusinessHoursManagem
 import { AdminDashboard } from '@features/admin/AdminDashboard';
 import { RestaurantsManagement } from '@features/admin/RestaurantsManagement';
 import { CustomersManagement } from '@features/admin/CustomersManagement';
+import { EmployeesManagement } from '@features/admin/EmployeesManagement';
+import { CouponsManagement } from '@features/admin/CouponsManagement';
+import { ReportsPage } from '@features/admin/ReportsPage';
 
 function AppContent() {
   const { user, isAuthenticated } = useAuth();
@@ -135,6 +138,15 @@ function AppContent() {
         break;
       case 'customers':
         content = <CustomersManagement />;
+        break;
+      case 'employees':
+        content = <EmployeesManagement />;
+        break;
+      case 'coupons':
+        content = <CouponsManagement />;
+        break;
+      case 'reports':
+        content = <ReportsPage />;
         break;
       default:
         content = <AdminDashboard onNavigate={navigate} />;

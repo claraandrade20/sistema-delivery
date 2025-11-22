@@ -88,6 +88,13 @@
     "phone": "(85) 99212-7498",
     "role": "client",
     "createdAt": "2025-11-21T11:48:54.183Z",
+    "id": "client-1763823082048",
+    "name": "Maria Silva",
+    "email": "maria.silva@email.com",
+    "password": "$2a$10$SwJMBjaUVmRzYNUjEMO3YuJNhd9Rk5cIHPa4ueAoriNi.swbU70pa",
+    "phone": "(85) 98765-1234",
+    "role": "client",
+    "createdAt": "2025-11-22T14:51:22.048Z",
     "isActive": true
   }
 ]

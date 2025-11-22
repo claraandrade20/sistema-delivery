@@ -1,8 +1,8 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '/ui/card';
-import { Badge } from '/ui/badge';
-import { Button } from '/ui/button';
-import { mockDashboardStats } from '/data/mockData';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
+import { Badge } from '@shared/ui/badge';
+import { Button } from '@shared/ui/button';
+import { mockDashboardStats } from '@shared/data/mockData';
 import { Package, DollarSign, Clock, Users, TrendingUp } from 'lucide-react';
 
 interface EmployeeDashboardProps {

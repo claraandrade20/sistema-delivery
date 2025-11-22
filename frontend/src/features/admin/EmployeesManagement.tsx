@@ -5,44 +5,78 @@ import { Input } from '@shared/ui/input';
 import { Badge } from '@shared/ui/badge';
 import { mockUsers } from '@shared/data/mockData';
 import { toast } from 'sonner';
-import { Search, User, Mail, Phone, Eye, EyeOff, Edit } from 'lucide-react';
+import { Search, User, Mail, Phone, Eye, EyeOff, Plus, Edit } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@shared/ui/dialog';
 import { Label } from '@shared/ui/label';
 
-export const CustomersManagement = () => {
-  const customers = mockUsers.filter(u => u.role === 'client');
+export const EmployeesManagement = () => {
+  const employees = mockUsers.filter(u => u.role === 'employee');
   const [searchQuery, setSearchQuery] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFormData, setEditFormData] = useState<any>(null);
 
-  const filteredCustomers = customers.filter(c =>
-    c.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredEmployees = employees.filter(e =>
+    e.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    e.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const toggleCustomerStatus = (id: string) => {
-    toast.success('Status do cliente atualizado!');
+  const toggleEmployeeStatus = (id: string) => {
+    toast.success('Status do funcionário atualizado!');
   };
 
-  const startEdit = (customer: any) => {
-    setEditingId(customer.id);
-    setEditFormData({ ...customer });
+  const startEdit = (employee: any) => {
+    setEditingId(employee.id);
+    setEditFormData({ ...employee });
   };
 
   const saveEdit = () => {
     setEditingId(null);
     setEditFormData(null);
-    toast.success('Cliente atualizado com sucesso!');
+    toast.success('Funcionário atualizado com sucesso!');
   };
 
   return (
     <div className="space-y-6">
-      <h1 className="text-3xl font-bold text-gray-900">Gerenciar Clientes</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-bold text-gray-900">Gerenciar Funcionários</h1>
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button className="bg-purple-600 hover:bg-purple-700">
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Funcionário
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Adicionar Funcionário</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div>
+                <Label>Nome</Label>
+                <Input placeholder="Nome completo" />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input type="email" placeholder="email@example.com" />
+              </div>
+              <div>
+                <Label>Telefone</Label>
+                <Input placeholder="(85) 98765-4321" />
+              </div>
+              <div>
+                <Label>Restaurante</Label>
+                <Input placeholder="Selecionar restaurante" />
+              </div>
+              <Button className="w-full">Adicionar Funcionário</Button>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
         <Input
-          placeholder="Buscar clientes por nome ou email..."
+          placeholder="Buscar funcionários por nome ou email..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="pl-10"
@@ -50,48 +84,45 @@ export const CustomersManagement = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {filteredCustomers.map((customer) => (
-          <Card key={customer.id}>
+        {filteredEmployees.map((employee) => (
+          <Card key={employee.id}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 flex-1">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-orange-400 to-red-500 flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
                     <User className="h-6 w-6 text-white" />
                   </div>
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900">{customer.name}</h3>
+                    <h3 className="font-semibold text-gray-900">{employee.name}</h3>
                     <div className="flex items-center gap-4 mt-1 text-sm text-gray-600">
                       <span className="flex items-center gap-1">
                         <Mail className="h-3 w-3" />
-                        {customer.email}
+                        {employee.email}
                       </span>
                       <span className="flex items-center gap-1">
                         <Phone className="h-3 w-3" />
-                        {customer.phone}
+                        {employee.phone}
                       </span>
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
-                      Cliente desde: {new Date(customer.createdAt).toLocaleDateString('pt-BR')}
-                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge className={customer.isActive ? 'bg-green-500' : 'bg-gray-400'}>
-                    {customer.isActive ? 'Ativo' : 'Inativo'}
+                  <Badge className={employee.isActive ? 'bg-green-500' : 'bg-gray-400'}>
+                    {employee.isActive ? 'Ativo' : 'Inativo'}
                   </Badge>
-                  <Dialog open={editingId === customer.id} onOpenChange={(open: boolean) => !open && setEditingId(null)}>
+                  <Dialog open={editingId === employee.id} onOpenChange={(open: boolean) => !open && setEditingId(null)}>
                     <DialogTrigger asChild>
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => startEdit(customer)}
+                        onClick={() => startEdit(employee)}
                       >
                         <Edit className="h-4 w-4" />
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Editar Cliente</DialogTitle>
+                        <DialogTitle>Editar Funcionário</DialogTitle>
                       </DialogHeader>
                       {editFormData && (
                         <div className="space-y-4">
@@ -125,9 +156,9 @@ export const CustomersManagement = () => {
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => toggleCustomerStatus(customer.id)}
+                    onClick={() => toggleEmployeeStatus(employee.id)}
                   >
-                    {customer.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {employee.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
                 </div>
               </div>

@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Card, CardContent } from '/ui/card';
-import { Button } from '/ui/button';
-import { Input } from '/ui/input';
-import { Badge } from '/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '/ui/dialog';
-import { Label } from '/ui/label';
-import { mockCategories } from '/data/mockData';
-import { toast } from 'sonner@2.0.3';
+import { Card, CardContent } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Input } from '@shared/ui/input';
+import { Badge } from '@shared/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@shared/ui/dialog';
+import { Label } from '@shared/ui/label';
+import { mockCategories } from '@shared/data/mockData';
+import { toast } from 'sonner';
 import { Plus, Edit, Eye, EyeOff } from 'lucide-react';
 
 export const CategoriesManagement = () => {

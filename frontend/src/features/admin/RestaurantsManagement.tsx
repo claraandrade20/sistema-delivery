@@ -1,19 +1,38 @@
 import React, { useState } from 'react';
-import { Card, CardContent } from '/ui/card';
-import { Button } from '/ui/button';
-import { Badge } from '/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '/ui/dialog';
-import { Input } from '/ui/input';
-import { Label } from '/ui/label';
-import { mockRestaurants } from '/data/mockData';
-import { toast } from 'sonner@2.0.3';
+import { Card, CardContent } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Badge } from '@shared/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@shared/ui/dialog';
+import { Input } from '@shared/ui/input';
+import { Label } from '@shared/ui/label';
+import { mockRestaurants } from '@shared/data/mockData';
+import { toast } from 'sonner';
 import { Plus, Edit, Eye, EyeOff, Star } from 'lucide-react';
 
 export const RestaurantsManagement = () => {
-  const [restaurants] = useState(mockRestaurants);
+  const [restaurants, setRestaurants] = useState(mockRestaurants);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editFormData, setEditFormData] = useState<any>(null);
 
   const toggleRestaurantStatus = (id: string) => {
+    setRestaurants(restaurants.map(r =>
+      r.id === id ? { ...r, isActive: !r.isActive } : r
+    ));
     toast.success('Status do restaurante atualizado!');
+  };
+
+  const startEdit = (restaurant: any) => {
+    setEditingId(restaurant.id);
+    setEditFormData({ ...restaurant });
+  };
+
+  const saveEdit = () => {
+    setRestaurants(restaurants.map(r =>
+      r.id === editingId ? editFormData : r
+    ));
+    setEditingId(null);
+    setEditFormData(null);
+    toast.success('Restaurante atualizado com sucesso!');
   };
 
   return (
@@ -114,10 +133,80 @@ export const RestaurantsManagement = () => {
                     </div>
                   </div>
                   <div className="flex gap-2 mt-4">
-                    <Button variant="outline" size="sm">
-                      <Edit className="h-3 w-3 mr-1" />
-                      Editar
-                    </Button>
+                    <Dialog open={editingId === restaurant.id} onOpenChange={(open: boolean) => !open && setEditingId(null)}>
+                      <DialogTrigger asChild>
+                        <Button variant="outline" size="sm" onClick={() => startEdit(restaurant)}>
+                          <Edit className="h-3 w-3 mr-1" />
+                          Editar
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-2xl">
+                        <DialogHeader>
+                          <DialogTitle>Editar Restaurante</DialogTitle>
+                        </DialogHeader>
+                        {editFormData && (
+                          <div className="space-y-4">
+                            <div>
+                              <Label>Nome do Restaurante</Label>
+                              <Input
+                                value={editFormData.name}
+                                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                              />
+                            </div>
+                            <div>
+                              <Label>Descrição</Label>
+                              <Input
+                                value={editFormData.description}
+                                onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>Telefone</Label>
+                                <Input
+                                  value={editFormData.phone}
+                                  onChange={(e) => setEditFormData({ ...editFormData, phone: e.target.value })}
+                                />
+                              </div>
+                              <div>
+                                <Label>Email</Label>
+                                <Input
+                                  type="email"
+                                  value={editFormData.email}
+                                  onChange={(e) => setEditFormData({ ...editFormData, email: e.target.value })}
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <Label>Endereço</Label>
+                              <Input
+                                value={editFormData.address}
+                                onChange={(e) => setEditFormData({ ...editFormData, address: e.target.value })}
+                              />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <Label>Taxa de Entrega (R$)</Label>
+                                <Input
+                                  type="number"
+                                  value={editFormData.deliveryFee}
+                                  onChange={(e) => setEditFormData({ ...editFormData, deliveryFee: parseFloat(e.target.value) })}
+                                />
+                              </div>
+                              <div>
+                                <Label>Pedido Mínimo (R$)</Label>
+                                <Input
+                                  type="number"
+                                  value={editFormData.minimumOrder}
+                                  onChange={(e) => setEditFormData({ ...editFormData, minimumOrder: parseFloat(e.target.value) })}
+                                />
+                              </div>
+                            </div>
+                            <Button className="w-full" onClick={saveEdit}>Salvar Alterações</Button>
+                          </div>
+                        )}
+                      </DialogContent>
+                    </Dialog>
                     <Button
                       variant="outline"
                       size="sm"
