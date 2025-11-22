@@ -5,10 +5,10 @@ async function initDatabase() {
   const connection = await pool.getConnection();
 
   try {
-    console.log("🔧 Inicializando banco de dados...");
+    console.log("Inicializando banco de dados...");
 
     // Criar tabelas
-    console.log("📋 Criando tabelas...");
+    console.log("Criando tabelas...");
 
     // Tabela de usuários
     await connection.query(`

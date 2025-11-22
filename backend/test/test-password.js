@@ -8,7 +8,7 @@ console.log('Testando senhas contra o hash de usuarios.json:\n');
 
 senhasTestar.forEach(senha => {
   const resultado = bcrypt.compareSync(senha, hash);
-  console.log(`Senha: "${senha}" -> ${resultado ? '✅ FUNCIONA' : '❌ não funciona'}`);
+  console.log(`Senha: "${senha}" -> ${resultado ? 'FUNCIONA' : 'NÃO FUNCIONA'}`);
 });
 
 // Se nenhuma funcionar, vamos gerar um novo hash para teste

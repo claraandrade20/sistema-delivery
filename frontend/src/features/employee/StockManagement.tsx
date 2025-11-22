@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '/ui/card';
-import { Button } from '/ui/button';
-import { Input } from '/ui/input';
-import { Badge } from '/ui/badge';
-import { mockProducts } from '/data/mockData';
-import { toast } from 'sonner@2.0.3';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Input } from '@shared/ui/input';
+import { Badge } from '@shared/ui/badge';
+import { mockProducts } from '@shared/data/mockData';
+import { toast } from 'sonner';
 import { Minus, Plus, AlertTriangle } from 'lucide-react';
 
 export const StockManagement = () => {

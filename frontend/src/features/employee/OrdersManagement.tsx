@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '/ui/card';
-import { Button } from '/ui/button';
-import { Badge } from '/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '/ui/select';
-import { mockOrders } from '/data/mockData';
-import { toast } from 'sonner@2.0.3';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Badge } from '@shared/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
+import { mockOrders } from '@shared/data/mockData';
+import { toast } from 'sonner';
 import { Package, Clock, Truck, CheckCircle } from 'lucide-react';
-import type { Order, OrderStatus } from '/types';
+import type { Order, OrderStatus } from '@shared/types';
 
 interface OrdersManagementProps {
   onNavigate: (page: string, data?: any) => void;
