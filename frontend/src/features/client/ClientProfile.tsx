@@ -93,6 +93,7 @@ export const ClientProfile = () => {
       {!isLoadingAddresses && (
         <AddressesSection
           addresses={addresses}
+          userId={user?.id || ''}
           onAddAddress={handleAddAddress}
         />
       )}

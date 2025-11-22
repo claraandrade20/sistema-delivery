@@ -1,11 +1,11 @@
 import React from 'react';
-import { Card, CardContent } from '/ui/card';
-import { Button } from '/ui/button';
-import { Badge } from '/ui/badge';
-import { useAuth } from '/context/AuthContext';
-import { getOrdersByCustomer } from '/data/mockData';
+import { Card, CardContent } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Badge } from '@shared/ui/badge';
+import { useAuth } from '@shared/context/AuthContext';
+import { getOrdersByCustomer } from '@shared/data/mockData';
 import { Clock, Package, Truck, CheckCircle, XCircle } from 'lucide-react';
-import type { OrderStatus } from '/types';
+import type { OrderStatus } from '@shared/types';
 
 interface MyOrdersProps {
   onNavigate: (page: string, data?: any) => void;

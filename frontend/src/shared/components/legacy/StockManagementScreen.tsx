@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { Package, Minus, Plus, ArrowLeft, AlertCircle } from 'lucide-react';
-import { Button } from './ui/button';
-import { Card, CardContent } from './ui/card';
-import { Input } from './ui/input';
-import { Badge } from './ui/badge';
-import { Alert, AlertDescription } from './ui/alert';
-import { stockItems as initialStockItems } from '/data/mockData';
+import { Button } from '@shared/ui/button';
+import { Card, CardContent } from '@shared/ui/card';
+import { Input } from '@shared/ui/input';
+import { Badge } from '@shared/ui/badge';
+import { Alert, AlertDescription } from '@shared/ui/alert';
+import { mockStockItems as initialStockItems } from '@shared/data/mockData';
 
 interface StockManagementScreenProps {
   onBack: () => void;

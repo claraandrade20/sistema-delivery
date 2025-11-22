@@ -17,7 +17,6 @@ import { toast } from 'sonner';
 
 type Address = {
   id: string;
-  cep: string;
   street: string;
   number: string;
   complement?: string;
@@ -28,18 +27,19 @@ type Address = {
 
 interface AddressesSectionProps {
   addresses: Address[];
-  onAddAddress: (address: Address) => void; // aqui você pode chamar API no pai
+  userId: string;
+  onAddAddress: (address: Address) => void;
 }
 
 export const AddressesSection: React.FC<AddressesSectionProps> = ({
   addresses,
+  userId,
   onAddAddress,
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
 
   const [form, setForm] = useState({
-    cep: '',
     street: '',
     number: '',
     complement: '',
@@ -53,7 +53,6 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({
   const handleOpenAdd = () => {
     setErrors({});
     setForm({
-      cep: '',
       street: '',
       number: '',
       complement: '',
@@ -72,7 +71,6 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({
   const validate = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!form.cep.trim()) newErrors.cep = 'Informe o CEP';
     if (!form.street.trim()) newErrors.street = 'Informe a rua/avenida';
     if (!form.number.trim()) newErrors.number = 'Informe o número';
     if (!form.district.trim()) newErrors.district = 'Informe o bairro';
@@ -89,19 +87,37 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({
 
     setIsLoading(true);
     try {
-      const newAddress: Address = {
-        id: crypto.randomUUID(),
-        ...form,
+      const addressData = {
+        userId,
+        street: form.street,
+        number: form.number,
+        complement: form.complement,
+        district: form.district,
+        city: form.city,
+        state: form.state,
       };
 
       // Envia o endereço para o backend
-      await api.enderecos.criar(newAddress);
+      const response = await api.enderecos.criar(addressData);
       
+      const newAddress: Address = {
+        id: response.id || crypto.randomUUID(),
+        ...form,
+      };
+
       onAddAddress(newAddress);
       setIsDialogOpen(false);
+      setForm({
+        street: '',
+        number: '',
+        complement: '',
+        district: '',
+        city: '',
+        state: '',
+      });
       toast.success('Endereço adicionado com sucesso!');
-    } catch (error) {
-      toast.error('Erro ao adicionar endereço');
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao adicionar endereço');
       console.error(error);
     } finally {
       setIsLoading(false);
@@ -147,7 +163,6 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({
                     <p className="text-sm text-gray-600">
                       {addr.district} - {addr.city}/{addr.state}
                     </p>
-                    <p className="text-xs text-gray-500 mt-1">CEP {addr.cep}</p>
                   </div>
                   <Badge className="self-start sm:self-auto bg-gray-100 text-gray-700">
                     Entrega
@@ -167,21 +182,6 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4 mt-2">
-            <div className="grid grid-cols-1 sm:grid-cols-[1fr,120px] gap-4">
-              <div>
-                <Label htmlFor="cep">CEP *</Label>
-                <Input
-                  id="cep"
-                  value={form.cep}
-                  onChange={(e) => handleChange('cep', e.target.value)}
-                  placeholder="00000-000"
-                />
-                {errors.cep && (
-                  <p className="text-xs text-red-500 mt-1">{errors.cep}</p>
-                )}
-              </div>
-            </div>
-
             <div className="grid grid-cols-1 sm:grid-cols-[2fr,1fr] gap-4">
               <div>
                 <Label htmlFor="street">Endereço *</Label>

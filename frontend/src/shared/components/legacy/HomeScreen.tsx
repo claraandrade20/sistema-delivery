@@ -1,10 +1,10 @@
 import { Search, Flame } from 'lucide-react';
-import { Input } from './ui/input';
-import { Card, CardContent } from './ui/card';
-import { Badge } from './ui/badge';
-import { Product } from '../types';
-import { products } from '/data/mockData';
-import { ImageWithFallback } from './figma/ImageWithFallback';
+import { Input } from '@shared/ui/input';
+import { Card, CardContent } from '@shared/ui/card';
+import { Badge } from '@shared/ui/badge';
+import { Product } from '@shared/types';
+import { mockProducts as products } from '@shared/data/mockData';
+import { ImageWithFallback } from '@shared/components/figma/ImageWithFallback';
 
 interface HomeScreenProps {
   onProductSelect: (product: Product) => void;

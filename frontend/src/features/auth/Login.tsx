@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { Button } from '/ui/button';
-import { Input } from '/ui/input';
-import { Label } from '/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '/ui/tabs';
-import { useAuth } from '/context/AuthContext';
-import { toast } from 'sonner@2.0.3';
+import { Button } from '@shared/ui/button';
+import { Input } from '@shared/ui/input';
+import { Label } from '@shared/ui/label';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@shared/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/ui/tabs';
+import { useAuth } from '@shared/context/AuthContext';
+import { toast } from 'sonner';
 import { UtensilsCrossed, Mail, Lock, User, Phone } from 'lucide-react';
 
 interface LoginProps {

@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
-import { Card, CardContent } from '/ui/card';
-import { Button } from '/ui/button';
-import { Badge } from '/ui/badge';
-import { RadioGroup, RadioGroupItem } from '/ui/radio-group';
-import { Checkbox } from '/ui/checkbox';
-import { Label } from '/ui/label';
-import { ImageWithFallback } from '/components/figma/ImageWithFallback';
-import { mockProducts } from '/data/mockData';
-import { useCart } from '/context/CartContext';
-import { toast } from 'sonner@2.0.3';
+import { Card, CardContent } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Badge } from '@shared/ui/badge';
+import { RadioGroup, RadioGroupItem } from '@shared/ui/radio-group';
+import { Checkbox } from '@shared/ui/checkbox';
+import { Label } from '@shared/ui/label';
+import { ImageWithFallback } from '@shared/components/figma/ImageWithFallback';
+import { mockProducts } from '@shared/data/mockData';
+import { useCart } from '@shared/context/CartContext';
+import { toast } from 'sonner';
 import { ArrowLeft, Star, Clock, Minus, Plus, ShoppingCart } from 'lucide-react';
 
 interface ProductDetailProps {
