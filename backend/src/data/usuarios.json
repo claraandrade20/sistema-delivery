@@ -1,6 +1,6 @@
 [
   {
-    "id": "client-1",
+    "id": "1",
     "name": "João Silva",
     "email": "joao@email.com",
     "password": "$2a$10$5Iw4iIA8h1f.PP1vE7h4B.JsP0VDZBF70KAa6UPgeDycg43KRcSCm",
@@ -10,7 +10,7 @@
     "isActive": true
   },
   {
-    "id": "client-2",
+    "id": "2",
     "name": "Maria Santos",
     "email": "maria@email.com",
     "password": "$2a$10$qMv2dd/d0UAwAfwLdQQnGOILGdi2wvu7KbR6BPgp6EwvuLzvcYRxG",
@@ -20,7 +20,7 @@
     "isActive": true
   },
   {
-    "id": "employee-1",
+    "id": "1",
     "name": "Carlos Souza",
     "email": "carlos@restaurant.com",
     "password": "$2a$10$BGQFZMMhTFXi0hNxaBx05OEawiLWEBZbauFnWTe/sfBpWDw5JW//K",
@@ -31,7 +31,7 @@
     "restaurantId": "rest-1"
   },
   {
-    "id": "admin-1",
+    "id": "1",
     "name": "Roberto Admin",
     "email": "admin@deliverysystem.com",
     "password": "$2a$10$8z/7ltE8u2FPaDmJno2g9eJkB6.Ht2bKEEaLVug9ELawI/l.7Ad.S",
@@ -41,7 +41,7 @@
     "isActive": true
   },
   {
-    "id": "client-1763500819604",
+    "id": "1763500819604",
     "name": "Clara Andrade",
     "email": "clara@gmail.com",
     "password": "$2a$10$8fga5elW1cMpB7QwBw4nzOWr.VHSZrHiurPl77lqlKSECiRG1b/5e",
@@ -51,7 +51,7 @@
     "isActive": true
   },
   {
-    "id": "client-1763724376601",
+    "id": "1763724376601",
     "name": "rafael lopes",
     "email": "rafaellopes250106@gmail.com",
     "password": "$2a$10$Tdc6XPD4G4Tv1Psz.f1O/.p42UU.2OnkTUP1WR1utW8WjxKa/1NSq",
@@ -61,7 +61,7 @@
     "isActive": true
   },
   {
-    "id": "client-1763724897316",
+    "id": "1763724897316",
     "name": "rafael ",
     "email": "rafaellopes25016@gmail.com",
     "password": "$2a$10$vjH6oocj769YPmBHOHn6GObVg0DeYQLZsjOGzrCLwUR5i/QZM7wAa",
@@ -71,7 +71,7 @@
     "isActive": true
   },
   {
-    "id": "client-1763725356435",
+    "id": "1763725356435",
     "name": "lopes",
     "email": "rafaellopes2501@gmail.com",
     "password": "$2a$10$aTd2bWdntuSYOsFAc5BYN.N5FFHsrWRthLr7CVu9LFuPKUxC8HyJC",
@@ -81,7 +81,7 @@
     "isActive": true
   },
   {
-    "id": "client-1763725734183",
+    "id": "1763725734183",
     "name": "rafael lopes",
     "email": "rafaellopes250@lopes.com",
     "password": "$2a$10$T7CSqmmE7VAxkPAn8IctA.vkOzhlWnHg6SyETz9z7ZcdHkXnPu1Ry",
@@ -91,7 +91,7 @@
     "isActive": true
   },
   {
-    "id": "client-1763823082048",
+    "id": "1763823082048",
     "name": "Maria Silva",
     "email": "maria.silva@email.com",
     "password": "$2a$10$SwJMBjaUVmRzYNUjEMO3YuJNhd9Rk5cIHPa4ueAoriNi.swbU70pa",
