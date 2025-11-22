@@ -152,8 +152,45 @@ export const pedidosAPI = {
   },
 };
 
+// ========== Endereços ==========
+
+export const enderecosAPI = {
+  listar: async (params?: { userId?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.userId) queryParams.set('userId', params.userId);
+    
+    const query = queryParams.toString();
+    return fetchAPI(`/enderecos${query ? `?${query}` : ''}`);
+  },
+
+  buscarPorId: async (id: string) => {
+    return fetchAPI(`/enderecos/${id}`);
+  },
+
+  criar: async (endereco: any) => {
+    return fetchAPI('/enderecos', {
+      method: 'POST',
+      body: JSON.stringify(endereco),
+    });
+  },
+
+  atualizar: async (id: string, endereco: any) => {
+    return fetchAPI(`/enderecos/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(endereco),
+    });
+  },
+
+  deletar: async (id: string) => {
+    return fetchAPI(`/enderecos/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 export default {
   auth: authAPI,
   produtos: produtosAPI,
   pedidos: pedidosAPI,
+  enderecos: enderecosAPI,
 };

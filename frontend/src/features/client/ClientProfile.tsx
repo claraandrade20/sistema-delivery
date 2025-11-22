@@ -1,33 +1,47 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '/ui/card';
-import { Button } from '/ui/button';
-import { Input } from '/ui/input';
-import { Label } from '/ui/label';
-import { useAuth } from '/context/AuthContext';
-import { getUserAddresses } from '/data/mockData';
-import { toast } from 'sonner@2.0.3';
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Input } from '@shared/ui/input';
+import { Label } from '@shared/ui/label';
+import { useAuth } from '@shared/context/AuthContext';
+import { toast } from 'sonner';
 import { User, MapPin } from 'lucide-react';
-import { AddressesSection } from './AddressesSection'; // <-- IMPORTA O COMPONENTE
+import { AddressesSection } from './AddressesSection';
+import api from '@shared/services/api';
 
 export const ClientProfile = () => {
   const { user } = useAuth();
-
-  // 🔥 Carrega endereços do mock e permite adicionar novos
-  const [addresses, setAddresses] = useState(
-    user ? getUserAddresses(user.id) : []
-  );
-
+  const [addresses, setAddresses] = useState<any[]>([]);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
   const [name, setName] = useState(user?.name || '');
   const [phone, setPhone] = useState(user?.phone || '');
+
+  // Carrega endereços do backend ao montar o componente
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!user?.id) return;
+      try {
+        setIsLoadingAddresses(true);
+        const data = await api.enderecos.listar({ userId: user.id });
+        setAddresses(data || []);
+      } catch (error) {
+        console.error('Erro ao carregar endereços:', error);
+        toast.error('Erro ao carregar endereços');
+      } finally {
+        setIsLoadingAddresses(false);
+      }
+    };
+
+    fetchAddresses();
+  }, [user?.id]);
 
   const handleUpdateProfile = () => {
     toast.success('Perfil atualizado com sucesso!');
   };
 
-  // 🔥 Salva o novo endereço vindo do modal
+  // Atualiza a lista local com o novo endereço
   const handleAddAddress = (newAddress: any) => {
     setAddresses((prev) => [...prev, newAddress]);
-    toast.success('Endereço adicionado com sucesso!');
   };
 
   return (
@@ -75,11 +89,13 @@ export const ClientProfile = () => {
         </CardContent>
       </Card>
 
-      {/* Endereços (AGORA TOTALMENTE FUNCIONAL) */}
-      <AddressesSection
-        addresses={addresses}
-        onAddAddress={handleAddAddress}
-      />
+      {/* Endereços */}
+      {!isLoadingAddresses && (
+        <AddressesSection
+          addresses={addresses}
+          onAddAddress={handleAddAddress}
+        />
+      )}
     </div>
   );
 };

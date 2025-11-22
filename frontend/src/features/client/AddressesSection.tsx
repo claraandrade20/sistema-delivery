@@ -1,17 +1,19 @@
 import React, { useState, FormEvent } from 'react';
-import { Card, CardContent } from '/ui/card';
-import { Button } from '/ui/button';
-import { Badge } from '/ui/badge';
+import { Card, CardContent } from '@shared/ui/card';
+import { Button } from '@shared/ui/button';
+import { Badge } from '@shared/ui/badge';
 import { MapPin, Plus } from 'lucide-react';
-import { Input } from '/ui/input';
-import { Label } from '/ui/label';
+import { Input } from '@shared/ui/input';
+import { Label } from '@shared/ui/label';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogFooter,
-} from '/ui/dialog';
+} from '@shared/ui/dialog';
+import api from '@shared/services/api';
+import { toast } from 'sonner';
 
 type Address = {
   id: string;
@@ -34,6 +36,7 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({
   onAddAddress,
 }) => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const [form, setForm] = useState({
     cep: '',
@@ -80,17 +83,29 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: FormEvent) => {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
 
-    const newAddress: Address = {
-      id: crypto.randomUUID(), // ou use o id vindo do backend
-      ...form,
-    };
+    setIsLoading(true);
+    try {
+      const newAddress: Address = {
+        id: crypto.randomUUID(),
+        ...form,
+      };
 
-    onAddAddress(newAddress);
-    setIsDialogOpen(false);
+      // Envia o endereço para o backend
+      await api.enderecos.criar(newAddress);
+      
+      onAddAddress(newAddress);
+      setIsDialogOpen(false);
+      toast.success('Endereço adicionado com sucesso!');
+    } catch (error) {
+      toast.error('Erro ao adicionar endereço');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -250,10 +265,13 @@ export const AddressesSection: React.FC<AddressesSectionProps> = ({
                 type="button"
                 variant="outline"
                 onClick={() => setIsDialogOpen(false)}
+                disabled={isLoading}
               >
                 Cancelar
               </Button>
-              <Button type="submit">Salvar endereço</Button>
+              <Button type="submit" disabled={isLoading}>
+                {isLoading ? 'Salvando...' : 'Salvar endereço'}
+              </Button>
             </DialogFooter>
           </form>
         </DialogContent>

@@ -4,6 +4,7 @@ import cors from "cors";
 import produtosRoutes from "./routes/produtos";
 import pedidosRoutes from "./routes/pedidos";
 import autenticacaoRoutes from "./routes/autenticacao";
+import enderecosRoutes from "./routes/enderecos";
 import pool from "./config/database";
 
 // Carregar variáveis de ambiente do arquivo .env
@@ -32,6 +33,7 @@ app.use((req, res, next) => {
 app.use("/api/produtos", produtosRoutes);
 app.use("/api/pedidos", pedidosRoutes);
 app.use("/api/auth", autenticacaoRoutes);
+app.use("/api/enderecos", enderecosRoutes);
 
 // Rota raiz da API
 app.get("/api", (req, res) => {
@@ -42,6 +44,7 @@ app.get("/api", (req, res) => {
       auth: "/api/auth",
       produtos: "/api/produtos",
       pedidos: "/api/pedidos",
+      enderecos: "/api/enderecos",
       health: "/api/health",
     },
   });
