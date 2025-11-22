@@ -98,7 +98,7 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
               <CardTitle>Método de Pagamento</CardTitle>
             </CardHeader>
             <CardContent>
-              <RadioGroup value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as PaymentMethod)}>
+              <RadioGroup value={paymentMethod} onValueChange={(value: string) => setPaymentMethod(value as PaymentMethod)}>
                 {paymentMethods.map((method) => {
                   const Icon = method.icon;
                   return (

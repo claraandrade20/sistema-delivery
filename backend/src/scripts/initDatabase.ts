@@ -15,6 +15,7 @@ async function runMigration() {
     await connection.execute("SET FOREIGN_KEY_CHECKS = 0");
     
     const tablesToDrop = [
+      'horario_funcionamento',
       'itens_pedido',
       'pedidos',
       'adicionais',
@@ -43,17 +44,17 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS usuarios (
         id VARCHAR(50) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
+        nome VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        phone VARCHAR(100),
-        role ENUM('employee', 'admin') NOT NULL,
-        restaurantId VARCHAR(50),
-        isActive BOOLEAN DEFAULT true,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        senha VARCHAR(255) NOT NULL,
+        telefone VARCHAR(100),
+        funcao ENUM('funcionario', 'administrador') NOT NULL,
+        id_restaurante VARCHAR(50),
+        ativo BOOLEAN DEFAULT true,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_email (email),
-        INDEX idx_role (role)
+        INDEX idx_funcao (funcao)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela USUARIOS criada com sucesso!\n");
@@ -63,13 +64,13 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS clientes (
         id VARCHAR(50) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
+        nome VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255) NOT NULL,
-        phone VARCHAR(100),
-        isActive BOOLEAN DEFAULT true,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        senha VARCHAR(255) NOT NULL,
+        telefone VARCHAR(100),
+        ativo BOOLEAN DEFAULT true,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         INDEX idx_email (email)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
@@ -99,31 +100,51 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS restaurantes (
         id VARCHAR(50) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        image VARCHAR(500),
+        nome VARCHAR(255) NOT NULL,
+        descricao TEXT,
+        imagem VARCHAR(500),
         email VARCHAR(255),
-        phone VARCHAR(20),
-        isActive BOOLEAN DEFAULT true,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_name (name)
+        telefone VARCHAR(20),
+        ativo BOOLEAN DEFAULT true,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_nome (nome)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela RESTAURANTES criada com sucesso!\n");
+
+    // ============= TABELA HORARIO_FUNCIONAMENTO =============
+    console.log("📋 Criando tabela HORARIO_FUNCIONAMENTO...");
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS horario_funcionamento (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        id_restaurante VARCHAR(50) NOT NULL,
+        dia_semana TINYINT NOT NULL,
+        nome_dia VARCHAR(20) NOT NULL,
+        hora_inicio TIME DEFAULT NULL,
+        hora_fim TIME DEFAULT NULL,
+        fechado BOOLEAN DEFAULT FALSE,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_restaurante) REFERENCES restaurantes(id) ON DELETE CASCADE,
+        INDEX idx_id_restaurante (id_restaurante),
+        INDEX idx_dia_semana (dia_semana)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log("✅ Tabela HORARIO_FUNCIONAMENTO criada com sucesso!\n");
 
     // ============= TABELA CATEGORIAS =============
     console.log("📋 Criando tabela CATEGORIAS...");
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS categorias (
         id VARCHAR(50) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        restaurantId VARCHAR(50) NOT NULL,
-        isActive BOOLEAN DEFAULT true,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (restaurantId) REFERENCES restaurantes(id) ON DELETE CASCADE,
-        INDEX idx_restaurantId (restaurantId)
+        nome VARCHAR(255) NOT NULL,
+        descricao TEXT,
+        id_restaurante VARCHAR(50) NOT NULL,
+        ativo BOOLEAN DEFAULT true,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_restaurante) REFERENCES restaurantes(id) ON DELETE CASCADE,
+        INDEX idx_id_restaurante (id_restaurante)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela CATEGORIAS criada com sucesso!\n");
@@ -133,24 +154,24 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS produtos (
         id VARCHAR(50) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
-        description TEXT,
-        image VARCHAR(500),
-        categoryId VARCHAR(50) NOT NULL,
-        restaurantId VARCHAR(50) NOT NULL,
-        stockQuantity INT DEFAULT 0,
-        isActive BOOLEAN DEFAULT true,
-        isFeatured BOOLEAN DEFAULT false,
-        rating DECIMAL(3,1) DEFAULT 0,
-        reviewsCount INT DEFAULT 0,
-        preparationTime INT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (categoryId) REFERENCES categorias(id) ON DELETE CASCADE,
-        FOREIGN KEY (restaurantId) REFERENCES restaurantes(id) ON DELETE CASCADE,
-        INDEX idx_categoryId (categoryId),
-        INDEX idx_restaurantId (restaurantId),
-        INDEX idx_isActive (isActive)
+        nome VARCHAR(255) NOT NULL,
+        descricao TEXT,
+        imagem VARCHAR(500),
+        id_categoria VARCHAR(50) NOT NULL,
+        id_restaurante VARCHAR(50) NOT NULL,
+        quantidade_estoque INT DEFAULT 0,
+        ativo BOOLEAN DEFAULT true,
+        destaque BOOLEAN DEFAULT false,
+        avaliacao DECIMAL(3,1) DEFAULT 0,
+        total_avaliacoes INT DEFAULT 0,
+        tempo_preparo INT,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_categoria) REFERENCES categorias(id) ON DELETE CASCADE,
+        FOREIGN KEY (id_restaurante) REFERENCES restaurantes(id) ON DELETE CASCADE,
+        INDEX idx_id_categoria (id_categoria),
+        INDEX idx_id_restaurante (id_restaurante),
+        INDEX idx_ativo (ativo)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela PRODUTOS criada com sucesso!\n");
@@ -160,12 +181,12 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS variacoes (
         id VARCHAR(50) PRIMARY KEY,
-        productId VARCHAR(50) NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        price DECIMAL(10,2) NOT NULL,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (productId) REFERENCES produtos(id) ON DELETE CASCADE,
-        INDEX idx_productId (productId)
+        id_produto VARCHAR(50) NOT NULL,
+        nome VARCHAR(255) NOT NULL,
+        preco DECIMAL(10,2) NOT NULL,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_produto) REFERENCES produtos(id) ON DELETE CASCADE,
+        INDEX idx_id_produto (id_produto)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela VARIACOES criada com sucesso!\n");
@@ -175,12 +196,12 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS adicionais (
         id VARCHAR(50) PRIMARY KEY,
-        productId VARCHAR(50) NOT NULL,
-        name VARCHAR(255) NOT NULL,
-        price DECIMAL(10,2) NOT NULL,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (productId) REFERENCES produtos(id) ON DELETE CASCADE,
-        INDEX idx_productId (productId)
+        id_produto VARCHAR(50) NOT NULL,
+        nome VARCHAR(255) NOT NULL,
+        preco DECIMAL(10,2) NOT NULL,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_produto) REFERENCES produtos(id) ON DELETE CASCADE,
+        INDEX idx_id_produto (id_produto)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela ADICIONAIS criada com sucesso!\n");
@@ -190,26 +211,26 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS pedidos (
         id VARCHAR(50) PRIMARY KEY,
-        customerId VARCHAR(50) NOT NULL,
-        customerName VARCHAR(255),
-        customerPhone VARCHAR(20),
-        restaurantId VARCHAR(50) NOT NULL,
-        restaurantName VARCHAR(255),
-        paymentMethod VARCHAR(50),
+        id_cliente VARCHAR(50) NOT NULL,
+        nome_cliente VARCHAR(255),
+        telefone_cliente VARCHAR(20),
+        id_restaurante VARCHAR(50) NOT NULL,
+        nome_restaurante VARCHAR(255),
+        metodo_pagamento VARCHAR(50),
         subtotal DECIMAL(10,2) NOT NULL,
-        deliveryFee DECIMAL(10,2) DEFAULT 0,
-        discount DECIMAL(10,2) DEFAULT 0,
+        taxa_entrega DECIMAL(10,2) DEFAULT 0,
+        desconto DECIMAL(10,2) DEFAULT 0,
         total DECIMAL(10,2) NOT NULL,
-        status ENUM('pending', 'confirmed', 'preparing', 'ready', 'on_the_way', 'delivered', 'cancelled') DEFAULT 'pending',
-        deliveryAddress TEXT,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (customerId) REFERENCES clientes(id) ON DELETE CASCADE,
-        FOREIGN KEY (restaurantId) REFERENCES restaurantes(id) ON DELETE CASCADE,
-        INDEX idx_customerId (customerId),
-        INDEX idx_restaurantId (restaurantId),
+        status ENUM('pendente', 'confirmado', 'preparando', 'pronto', 'a_caminho', 'entregue', 'cancelado') DEFAULT 'pendente',
+        endereco_entrega TEXT,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_cliente) REFERENCES clientes(id) ON DELETE CASCADE,
+        FOREIGN KEY (id_restaurante) REFERENCES restaurantes(id) ON DELETE CASCADE,
+        INDEX idx_id_cliente (id_cliente),
+        INDEX idx_id_restaurante (id_restaurante),
         INDEX idx_status (status),
-        INDEX idx_createdAt (createdAt)
+        INDEX idx_criado_em (criado_em)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela PEDIDOS criada com sucesso!\n");
@@ -219,18 +240,18 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS itens_pedido (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        orderId VARCHAR(50) NOT NULL,
-        productId VARCHAR(50) NOT NULL,
-        productName VARCHAR(255),
-        variationId VARCHAR(50),
-        variationName VARCHAR(255),
-        quantity INT NOT NULL,
+        id_pedido VARCHAR(50) NOT NULL,
+        id_produto VARCHAR(50) NOT NULL,
+        nome_produto VARCHAR(255),
+        id_variacao VARCHAR(50),
+        nome_variacao VARCHAR(255),
+        quantidade INT NOT NULL,
         subtotal DECIMAL(10,2) NOT NULL,
-        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (orderId) REFERENCES pedidos(id) ON DELETE CASCADE,
-        FOREIGN KEY (productId) REFERENCES produtos(id),
-        INDEX idx_orderId (orderId),
-        INDEX idx_productId (productId)
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (id_pedido) REFERENCES pedidos(id) ON DELETE CASCADE,
+        FOREIGN KEY (id_produto) REFERENCES produtos(id),
+        INDEX idx_id_pedido (id_pedido),
+        INDEX idx_id_produto (id_produto)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela ITENS_PEDIDO criada com sucesso!\n");
@@ -263,7 +284,7 @@ async function runMigration() {
         // Apenas inserir admin e employee na tabela usuarios
         if (usuario.role === "employee" || usuario.role === "admin") {
           await connection.execute(
-            `INSERT INTO usuarios (id, name, email, password, phone, role, restaurantId, isActive, createdAt)
+            `INSERT INTO usuarios (id, nome, email, senha, telefone, funcao, id_restaurante, ativo, criado_em)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               usuario.id,
@@ -271,7 +292,7 @@ async function runMigration() {
               usuario.email,
               usuario.password,
               phone,
-              usuario.role,
+              usuario.role === "admin" ? "administrador" : "funcionario",
               usuario.restaurantId || null,
               usuario.isActive !== false,
               createdAt,
@@ -281,7 +302,7 @@ async function runMigration() {
         // Inserir clientes na tabela clientes
         else if (usuario.role === "client") {
           await connection.execute(
-            `INSERT INTO clientes (id, name, email, password, phone, isActive, createdAt)
+            `INSERT INTO clientes (id, nome, email, senha, telefone, ativo, criado_em)
              VALUES (?, ?, ?, ?, ?, ?, ?)`,
             [
               usuario.id,
@@ -301,7 +322,7 @@ async function runMigration() {
     // Inserir restaurantes padrão
     console.log("📤 Inserindo restaurantes...");
     await connection.execute(
-      `INSERT IGNORE INTO restaurantes (id, name, description, email, phone, isActive)
+      `INSERT IGNORE INTO restaurantes (id, nome, descricao, email, telefone, ativo)
        VALUES ('rest-1', 'Pizzaria Bella Napoli', 'Melhor pizzaria da cidade', 'pizza@email.com', '8533333333', true)`
     );
     console.log("✅ Restaurantes inseridos com sucesso!\n");
@@ -309,7 +330,7 @@ async function runMigration() {
     // Inserir categorias padrão
     console.log("📤 Inserindo categorias...");
     await connection.execute(
-      `INSERT IGNORE INTO categorias (id, name, description, restaurantId, isActive)
+      `INSERT IGNORE INTO categorias (id, nome, descricao, id_restaurante, ativo)
        VALUES 
        ('cat-1', 'Pizzas', 'Pizzas deliciosas', 'rest-1', true),
        ('cat-2', 'Bebidas', 'Bebidas variadas', 'rest-1', true)`
@@ -327,7 +348,7 @@ async function runMigration() {
 
         // Inserir produto
         await connection.execute(
-          `INSERT INTO produtos (id, name, description, image, categoryId, restaurantId, stockQuantity, isActive, isFeatured, rating, reviewsCount, preparationTime)
+          `INSERT INTO produtos (id, nome, descricao, imagem, id_categoria, id_restaurante, quantidade_estoque, ativo, destaque, avaliacao, total_avaliacoes, tempo_preparo)
            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           [
             produto.id,
@@ -349,7 +370,7 @@ async function runMigration() {
         if (produto.variations && Array.isArray(produto.variations)) {
           for (const variation of produto.variations) {
             await connection.execute(
-              `INSERT INTO variacoes (id, productId, name, price)
+              `INSERT INTO variacoes (id, id_produto, nome, preco)
                VALUES (?, ?, ?, ?)`,
               [variation.id, produto.id, variation.name, variation.price]
             );
@@ -360,7 +381,7 @@ async function runMigration() {
         if (produto.addons && Array.isArray(produto.addons)) {
           for (const addon of produto.addons) {
             await connection.execute(
-              `INSERT INTO adicionais (id, productId, name, price)
+              `INSERT INTO adicionais (id, id_produto, nome, preco)
                VALUES (?, ?, ?, ?)`,
               [addon.id, produto.id, addon.name, addon.price]
             );
@@ -399,7 +420,7 @@ async function runMigration() {
 
         try {
           await connection.execute(
-            `INSERT INTO pedidos (id, customerId, customerName, customerPhone, restaurantId, restaurantName, paymentMethod, subtotal, deliveryFee, discount, total, status, deliveryAddress, createdAt, updatedAt)
+            `INSERT INTO pedidos (id, id_cliente, nome_cliente, telefone_cliente, id_restaurante, nome_restaurante, metodo_pagamento, subtotal, taxa_entrega, desconto, total, status, endereco_entrega, criado_em, atualizado_em)
              VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
               pedido.id,
@@ -413,7 +434,7 @@ async function runMigration() {
               pedido.deliveryFee || 0,
               pedido.discount || 0,
               pedido.total,
-              pedido.status || "pending",
+              pedido.status || "pendente",
               deliveryAddressStr,
               createdAtPedido,
               updatedAtPedido,
@@ -424,7 +445,7 @@ async function runMigration() {
           if (pedido.items && Array.isArray(pedido.items)) {
             for (const item of pedido.items) {
               await connection.execute(
-                `INSERT INTO itens_pedido (orderId, productId, productName, variationId, variationName, quantity, subtotal)
+                `INSERT INTO itens_pedido (id_pedido, id_produto, nome_produto, id_variacao, nome_variacao, quantidade, subtotal)
                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
                   pedido.id,
@@ -451,6 +472,7 @@ async function runMigration() {
     console.log("  - clientes");
     console.log("  - enderecos");
     console.log("  - restaurantes");
+    console.log("  - horario_funcionamento");
     console.log("  - categorias");
     console.log("  - produtos");
     console.log("  - variacoes");
