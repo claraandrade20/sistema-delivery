@@ -1,22 +1,79 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
 import { Switch } from '@shared/ui/switch';
 import { Label } from '@shared/ui/label';
-import { mockRestaurants } from '@shared/data/mockData';
+import { horariosAPI } from '@shared/services/api';
 import { toast } from 'sonner';
-import { Clock } from 'lucide-react';
+import { Clock, Loader2 } from 'lucide-react';
 
 const daysOfWeek = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
 
-export const BusinessHoursManagement = () => {
-  const restaurant = mockRestaurants[0];
-  const [hours, setHours] = useState(restaurant.businessHours);
+interface BusinessHours {
+  dayOfWeek: number;
+  isOpen: boolean;
+  openTime: string;
+  closeTime: string;
+}
 
-  const handleSave = () => {
-    toast.success('Horários atualizados com sucesso!');
+export const BusinessHoursManagement = () => {
+  const [hours, setHours] = useState<BusinessHours[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const restaurantId = 1; // Usar o ID do restaurante do contexto/auth
+
+  // Carregar horários do banco ao montar o componente
+  useEffect(() => {
+    fetchHorarios();
+  }, []);
+
+  const fetchHorarios = async () => {
+    try {
+      setLoading(true);
+      const data = await horariosAPI.buscar(restaurantId);
+      setHours(data);
+    } catch (error) {
+      console.error('Erro ao buscar horários:', error);
+      toast.error('Erro ao carregar horários');
+      // Usar dados padrão em caso de erro
+      setHours(createDefaultHours());
+    } finally {
+      setLoading(false);
+    }
   };
+
+  const createDefaultHours = (): BusinessHours[] => [
+    { dayOfWeek: 0, isOpen: true, openTime: '11:00', closeTime: '23:00' },
+    { dayOfWeek: 1, isOpen: true, openTime: '11:00', closeTime: '23:00' },
+    { dayOfWeek: 2, isOpen: true, openTime: '11:00', closeTime: '23:00' },
+    { dayOfWeek: 3, isOpen: true, openTime: '11:00', closeTime: '23:00' },
+    { dayOfWeek: 4, isOpen: true, openTime: '11:00', closeTime: '23:00' },
+    { dayOfWeek: 5, isOpen: true, openTime: '11:00', closeTime: '00:00' },
+    { dayOfWeek: 6, isOpen: true, openTime: '11:00', closeTime: '00:00' },
+  ];
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await horariosAPI.atualizar(restaurantId, hours);
+      toast.success('Horários atualizados com sucesso!');
+    } catch (error) {
+      console.error('Erro ao salvar horários:', error);
+      toast.error('Erro ao atualizar horários');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="max-w-4xl space-y-6 flex items-center justify-center h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+        <p>Carregando horários...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -73,8 +130,19 @@ export const BusinessHoursManagement = () => {
               )}
             </div>
           ))}
-          <Button onClick={handleSave} className="w-full">
-            Salvar Alterações
+          <Button 
+            onClick={handleSave} 
+            className="w-full"
+            disabled={saving}
+          >
+            {saving ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Salvando...
+              </>
+            ) : (
+              'Salvar Alterações'
+            )}
           </Button>
         </CardContent>
       </Card>

@@ -221,7 +221,7 @@ async function runMigration() {
         taxa_entrega DECIMAL(10,2) DEFAULT 0,
         desconto DECIMAL(10,2) DEFAULT 0,
         total DECIMAL(10,2) NOT NULL,
-        status ENUM('pendente', 'confirmado', 'preparando', 'pronto', 'a_caminho', 'entregue', 'cancelado') DEFAULT 'pendente',
+        status ENUM('pending', 'confirmed', 'preparing', 'ready', 'on_the_way', 'delivered', 'cancelled', 'pendente', 'confirmado', 'preparando', 'pronto', 'a_caminho', 'entregue', 'cancelado') DEFAULT 'pending',
         endereco_entrega TEXT,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
         atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -396,10 +396,18 @@ async function runMigration() {
       const pedidos = JSON.parse(fs.readFileSync(pedidosPath, "utf-8"));
       console.log(`📤 Inserindo ${pedidos.length} pedidos...`);
 
+      const insertedPedidoIds = new Set<string>();
+
       for (const pedido of pedidos) {
         // Validar dados obrigatórios
         if (!pedido.id || !pedido.customerId || !pedido.restaurantId || !pedido.total) {
           console.warn(`⚠️ Pedido ${pedido.id} ignorado por dados inválidos`);
+          continue;
+        }
+
+        // Evitar duplicatas
+        if (insertedPedidoIds.has(pedido.id)) {
+          console.warn(`⚠️ Pedido ${pedido.id} já foi inserido, pulando...`);
           continue;
         }
 
@@ -434,12 +442,14 @@ async function runMigration() {
               pedido.deliveryFee || 0,
               pedido.discount || 0,
               pedido.total,
-              pedido.status || "pendente",
+              pedido.status || "pending",
               deliveryAddressStr,
               createdAtPedido,
               updatedAtPedido,
             ]
           );
+
+          insertedPedidoIds.add(pedido.id);
 
           // Inserir itens do pedido
           if (pedido.items && Array.isArray(pedido.items)) {

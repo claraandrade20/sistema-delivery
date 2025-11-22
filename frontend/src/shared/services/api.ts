@@ -188,9 +188,25 @@ export const enderecosAPI = {
   },
 };
 
+// ========== Horários de Funcionamento ==========
+
+export const horariosAPI = {
+  buscar: async (restaurantId: number) => {
+    return fetchAPI(`/horarios/${restaurantId}`);
+  },
+
+  atualizar: async (restaurantId: number, horarios: any[]) => {
+    return fetchAPI(`/horarios/${restaurantId}`, {
+      method: 'PUT',
+      body: JSON.stringify(horarios),
+    });
+  },
+};
+
 export default {
   auth: authAPI,
   produtos: produtosAPI,
   pedidos: pedidosAPI,
   enderecos: enderecosAPI,
+  horarios: horariosAPI,
 };
