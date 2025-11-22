@@ -1,6 +1,6 @@
 import React from 'react';
-import { useAuth } from '/context/AuthContext';
-import { Button } from '/ui/button';
+import { useAuth } from '@shared/context/AuthContext';
+import { Button } from '@shared/ui/button';
 import { LayoutDashboard, Store, Users, UserCog, Ticket, FileText, LogOut, Shield } from 'lucide-react';
 
 interface AdminLayoutProps {

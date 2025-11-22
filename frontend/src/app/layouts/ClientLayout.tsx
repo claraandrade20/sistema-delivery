@@ -1,9 +1,9 @@
 import React from 'react';
-import { useAuth } from '/context/AuthContext';
-import { useCart } from '/context/CartContext';
-import { Button } from '/ui/button';
-import { Input } from '/ui/input';
-import { Badge } from '/ui/badge';
+import { useAuth } from '@shared/context/AuthContext';
+import { useCart } from '@shared/context/CartContext';
+import { Button } from '@shared/ui/button';
+import { Input } from '@shared/ui/input';
+import { Badge } from '@shared/ui/badge';
 import {
   Home,
   ShoppingBag,

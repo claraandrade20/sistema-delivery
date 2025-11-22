@@ -1,6 +1,6 @@
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '/ui/card';
-import { mockDashboardStats, mockRestaurants, mockUsers } from '/data/mockData';
+import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
+import { mockDashboardStats, mockRestaurants, mockUsers } from '@shared/data/mockData';
 import { Store, Users, DollarSign, Package, TrendingUp, Activity } from 'lucide-react';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
