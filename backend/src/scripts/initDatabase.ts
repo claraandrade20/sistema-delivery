@@ -10,6 +10,34 @@ async function runMigration() {
 
     console.log("🔄 Iniciando migração do banco de dados...\n");
 
+    // ============= DROPAR TABELAS EXISTENTES =============
+    console.log("🗑️ Limpando tabelas existentes...");
+    await connection.execute("SET FOREIGN_KEY_CHECKS = 0");
+    
+    const tablesToDrop = [
+      'itens_pedido',
+      'pedidos',
+      'adicionais',
+      'variacoes',
+      'produtos',
+      'categorias',
+      'restaurantes',
+      'enderecos',
+      'clientes',
+      'usuarios'
+    ];
+
+    for (const table of tablesToDrop) {
+      try {
+        await connection.execute(`DROP TABLE IF EXISTS ${table}`);
+      } catch (error) {
+        // Ignorar erro se tabela não existir
+      }
+    }
+    
+    await connection.execute("SET FOREIGN_KEY_CHECKS = 1");
+    console.log("✅ Tabelas antigas removidas!\n");
+
     // ============= TABELA USUARIOS =============
     console.log("📋 Criando tabela USUARIOS...");
     await connection.execute(`
@@ -18,8 +46,8 @@ async function runMigration() {
         name VARCHAR(255) NOT NULL,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
-        phone VARCHAR(20),
-        role ENUM('client', 'employee', 'admin') NOT NULL,
+        phone VARCHAR(100),
+        role ENUM('employee', 'admin') NOT NULL,
         restaurantId VARCHAR(50),
         isActive BOOLEAN DEFAULT true,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -29,6 +57,42 @@ async function runMigration() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela USUARIOS criada com sucesso!\n");
+
+    // ============= TABELA CLIENTES =============
+    console.log("📋 Criando tabela CLIENTES...");
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS clientes (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255) NOT NULL,
+        phone VARCHAR(100),
+        isActive BOOLEAN DEFAULT true,
+        createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_email (email)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log("✅ Tabela CLIENTES criada com sucesso!\n");
+
+    // ============= TABELA ENDERECOS =============
+    console.log("📋 Criando tabela ENDERECOS...");
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS enderecos (
+        id VARCHAR(50) PRIMARY KEY,
+        id_cliente VARCHAR(50) NOT NULL,
+        rua VARCHAR(255) NOT NULL,
+        numero VARCHAR(20) NOT NULL,
+        complemento VARCHAR(255),
+        bairro VARCHAR(255) NOT NULL,
+        endereco TEXT NOT NULL,
+        status ENUM('principal', 'secundario') DEFAULT 'secundario',
+        FOREIGN KEY (id_cliente) REFERENCES clientes(id) ON DELETE CASCADE,
+        INDEX idx_id_cliente (id_cliente),
+        INDEX idx_status (status)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log("✅ Tabela ENDERECOS criada com sucesso!\n");
 
     // ============= TABELA RESTAURANTES =============
     console.log("📋 Criando tabela RESTAURANTES...");
@@ -140,7 +204,7 @@ async function runMigration() {
         deliveryAddress TEXT,
         createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
         updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (customerId) REFERENCES usuarios(id) ON DELETE CASCADE,
+        FOREIGN KEY (customerId) REFERENCES clientes(id) ON DELETE CASCADE,
         FOREIGN KEY (restaurantId) REFERENCES restaurantes(id) ON DELETE CASCADE,
         INDEX idx_customerId (customerId),
         INDEX idx_restaurantId (restaurantId),
@@ -182,26 +246,56 @@ async function runMigration() {
     // Migrate Usuários
     if (fs.existsSync(usuariosPath)) {
       const usuarios = JSON.parse(fs.readFileSync(usuariosPath, "utf-8"));
-      console.log(`📤 Inserindo ${usuarios.length} usuários...`);
+      console.log(`📤 Inserindo usuários (admin e funcionários)...`);
 
       for (const usuario of usuarios) {
-        await connection.execute(
-          `INSERT INTO usuarios (id, name, email, password, phone, role, restaurantId, isActive, createdAt)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            usuario.id,
-            usuario.name,
-            usuario.email,
-            usuario.password,
-            usuario.phone || null,
-            usuario.role,
-            usuario.restaurantId || null,
-            usuario.isActive !== false,
-            usuario.createdAt || new Date().toISOString(),
-          ]
-        );
+        // Converter data ISO para formato MySQL
+        const createdAt = usuario.createdAt 
+          ? new Date(usuario.createdAt).toISOString().replace('T', ' ').substring(0, 19)
+          : new Date().toISOString().replace('T', ' ').substring(0, 19);
+
+        // Validar e limpar phone (deve conter apenas números e caracteres de telefone válidos)
+        let phone = usuario.phone || null;
+        if (phone && phone.includes('@')) {
+          phone = null; // Se contém @, é email, não telefone
+        }
+
+        // Apenas inserir admin e employee na tabela usuarios
+        if (usuario.role === "employee" || usuario.role === "admin") {
+          await connection.execute(
+            `INSERT INTO usuarios (id, name, email, password, phone, role, restaurantId, isActive, createdAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              usuario.id,
+              usuario.name,
+              usuario.email,
+              usuario.password,
+              phone,
+              usuario.role,
+              usuario.restaurantId || null,
+              usuario.isActive !== false,
+              createdAt,
+            ]
+          );
+        }
+        // Inserir clientes na tabela clientes
+        else if (usuario.role === "client") {
+          await connection.execute(
+            `INSERT INTO clientes (id, name, email, password, phone, isActive, createdAt)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [
+              usuario.id,
+              usuario.name,
+              usuario.email,
+              usuario.password,
+              phone,
+              usuario.isActive !== false,
+              createdAt,
+            ]
+          );
+        }
       }
-      console.log("✅ Usuários inseridos com sucesso!\n");
+      console.log("✅ Usuários e clientes inseridos com sucesso!\n");
     }
 
     // Inserir restaurantes padrão
@@ -288,6 +382,15 @@ async function runMigration() {
           continue;
         }
 
+        // Converter datas ISO para formato MySQL
+        const createdAtPedido = pedido.createdAt
+          ? new Date(pedido.createdAt).toISOString().replace('T', ' ').substring(0, 19)
+          : new Date().toISOString().replace('T', ' ').substring(0, 19);
+        
+        const updatedAtPedido = pedido.updatedAt
+          ? new Date(pedido.updatedAt).toISOString().replace('T', ' ').substring(0, 19)
+          : new Date().toISOString().replace('T', ' ').substring(0, 19);
+
         const deliveryAddressStr = pedido.deliveryAddress
           ? typeof pedido.deliveryAddress === "string"
             ? pedido.deliveryAddress
@@ -312,8 +415,8 @@ async function runMigration() {
               pedido.total,
               pedido.status || "pending",
               deliveryAddressStr,
-              pedido.createdAt || new Date().toISOString(),
-              pedido.updatedAt || new Date().toISOString(),
+              createdAtPedido,
+              updatedAtPedido,
             ]
           );
 
@@ -345,6 +448,8 @@ async function runMigration() {
     console.log("✨ Migração concluída com sucesso!");
     console.log("\n📊 Resumo das tabelas criadas:");
     console.log("  - usuarios");
+    console.log("  - clientes");
+    console.log("  - enderecos");
     console.log("  - restaurantes");
     console.log("  - categorias");
     console.log("  - produtos");

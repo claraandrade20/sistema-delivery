@@ -55,7 +55,7 @@
     "name": "rafael lopes",
     "email": "rafaellopes250106@gmail.com",
     "password": "$2a$10$Tdc6XPD4G4Tv1Psz.f1O/.p42UU.2OnkTUP1WR1utW8WjxKa/1NSq",
-    "phone": "rafaellopes250106@gmail.com",
+    "phone": null,
     "role": "client",
     "createdAt": "2025-11-21T11:26:16.601Z",
     "isActive": true
@@ -75,7 +75,7 @@
     "name": "lopes",
     "email": "rafaellopes2501@gmail.com",
     "password": "$2a$10$aTd2bWdntuSYOsFAc5BYN.N5FFHsrWRthLr7CVu9LFuPKUxC8HyJC",
-    "phone": "rafaellopes250106@gmail.com",
+    "phone": null,
     "role": "client",
     "createdAt": "2025-11-21T11:42:36.435Z",
     "isActive": true
@@ -88,6 +88,9 @@
     "phone": "(85) 99212-7498",
     "role": "client",
     "createdAt": "2025-11-21T11:48:54.183Z",
+    "isActive": true
+  },
+  {
     "id": "client-1763823082048",
     "name": "Maria Silva",
     "email": "maria.silva@email.com",
