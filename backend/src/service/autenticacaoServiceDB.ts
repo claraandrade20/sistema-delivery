@@ -48,34 +48,32 @@ export async function registrarUsuario(dados: {
 
   try {
     // Verificar se email já existe
-    const [usuarios] = await connection.query<UsuarioDB[]>(
-      "SELECT id FROM usuarios WHERE email = ?",
+    const [clientes] = await connection.query<any[]>(
+      "SELECT id FROM clientes WHERE email = ?",
       [dados.email]
     );
 
-    if (usuarios.length > 0) {
+    if (clientes.length > 0) {
       throw new Error("Email já cadastrado");
     }
 
     // Hash da senha
     const senhaHash = bcrypt.hashSync(dados.password, 10);
-    const id = `client-${Date.now()}`;
     const agora = new Date().toISOString();
-    const role = (dados.role as any) || "client";
 
-    // Inserir novo usuário
+    // Inserir novo cliente
     await connection.query<ResultSetHeader>(
-      `INSERT INTO usuarios (id, name, email, password, phone, role, createdAt, isActive) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, dados.name, dados.email, senhaHash, dados.phone, role, agora, true]
+      `INSERT INTO clientes (nome, email, senha, telefone, ativo) 
+       VALUES (?, ?, ?, ?, ?)`,
+      [dados.name, dados.email, senhaHash, dados.phone, true]
     );
 
     return {
-      id,
+      id: dados.email, // Usar email como ID temporário
       name: dados.name,
       email: dados.email,
       phone: dados.phone,
-      role: role as any,
+      role: "client" as const,
       createdAt: agora,
       isActive: true,
     };
@@ -91,24 +89,25 @@ export async function fazerLogin(email: string, password: string): Promise<Login
   const connection = await pool.getConnection();
 
   try {
-    const [usuarios] = await connection.query<UsuarioDB[]>(
-      "SELECT * FROM usuarios WHERE email = ? AND isActive = true",
+    // Procurar primeiro na tabela clientes (clientes do app)
+    const [clientes] = await connection.query<any[]>(
+      "SELECT id, nome, email, senha, telefone, ativo FROM clientes WHERE email = ? AND ativo = true",
       [email]
     );
 
     console.log(`[LOGIN] Tentativa de login: ${email}`);
-    console.log(`[LOGIN] Usuários encontrados: ${usuarios.length}`);
+    console.log(`[LOGIN] Clientes encontrados: ${clientes.length}`);
 
-    if (usuarios.length === 0) {
+    if (clientes.length === 0) {
       throw new Error("Credenciais inválidas");
     }
 
-    const usuario = usuarios[0];
+    const usuario = clientes[0];
 
-    console.log(`[LOGIN] Usuário encontrado: ${usuario.name}`);
-    console.log(`[LOGIN] Hash da senha no DB: ${usuario.password.substring(0, 20)}...`);
+    console.log(`[LOGIN] Cliente encontrado: ${usuario.nome}`);
+    console.log(`[LOGIN] Hash da senha no DB: ${usuario.senha.substring(0, 20)}...`);
 
-    const senhaValida = bcrypt.compareSync(password, usuario.password);
+    const senhaValida = bcrypt.compareSync(password, usuario.senha);
 
     console.log(`[LOGIN] Senha válida: ${senhaValida}`);
 
@@ -118,16 +117,22 @@ export async function fazerLogin(email: string, password: string): Promise<Login
 
     // Gerar token JWT
     const token = jwt.sign(
-      { id: usuario.id, email: usuario.email, role: usuario.role },
+      { id: usuario.id, email: usuario.email, role: "client" },
       JWT_SECRET,
       { expiresIn: "7d" }
     );
 
-    const { password: _, ...usuarioSemSenha } = usuario;
-
     return {
       token,
-      user: usuarioSemSenha,
+      user: {
+        id: usuario.id.toString(),
+        name: usuario.nome,
+        email: usuario.email,
+        phone: usuario.telefone,
+        role: "client" as const,
+        createdAt: new Date().toISOString(),
+        isActive: true,
+      },
     };
   } finally {
     connection.release();
@@ -141,19 +146,26 @@ export async function buscarUsuarioPorId(id: string): Promise<Omit<Usuario, "pas
   const connection = await pool.getConnection();
 
   try {
-    const [usuarios] = await connection.query<UsuarioDB[]>(
-      "SELECT * FROM usuarios WHERE id = ?",
+    const [clientes] = await connection.query<any[]>(
+      "SELECT id, nome, email, telefone, ativo FROM clientes WHERE id = ?",
       [id]
     );
 
-    if (usuarios.length === 0) {
+    if (clientes.length === 0) {
       return undefined;
     }
 
-    const usuario = usuarios[0];
-    const { password, ...usuarioSemSenha } = usuario;
+    const usuario = clientes[0];
 
-    return usuarioSemSenha;
+    return {
+      id: usuario.id.toString(),
+      name: usuario.nome,
+      email: usuario.email,
+      phone: usuario.telefone,
+      role: "client" as const,
+      createdAt: new Date().toISOString(),
+      isActive: usuario.ativo,
+    };
   } finally {
     connection.release();
   }
@@ -166,9 +178,19 @@ export async function listarUsuarios(): Promise<Omit<Usuario, "password">[]> {
   const connection = await pool.getConnection();
 
   try {
-    const [usuarios] = await connection.query<UsuarioDB[]>("SELECT * FROM usuarios");
+    const [clientes] = await connection.query<any[]>(
+      "SELECT id, nome, email, telefone, ativo FROM clientes"
+    );
 
-    return usuarios.map(({ password, ...user }) => user);
+    return clientes.map((c) => ({
+      id: c.id.toString(),
+      name: c.nome,
+      email: c.email,
+      phone: c.telefone,
+      role: "client" as const,
+      createdAt: new Date().toISOString(),
+      isActive: c.ativo,
+    }));
   } finally {
     connection.release();
   }
@@ -184,23 +206,27 @@ export async function atualizarUsuario(
   const connection = await pool.getConnection();
 
   try {
-    // Construir query dinamicamente
+    const mapeoCampos: { [key: string]: string } = {
+      name: "nome",
+      phone: "telefone",
+      isActive: "ativo",
+    };
+
     const campos = Object.keys(dados)
-      .filter((key) => key !== "id" && key !== "password")
-      .map((key) => `${key} = ?`)
+      .filter((key) => key in mapeoCampos && key !== "id" && key !== "password")
+      .map((key) => `${mapeoCampos[key]} = ?`)
       .join(", ");
 
     if (campos === "") {
       return buscarUsuarioPorId(id);
     }
 
-    const valores = Object.values(dados).filter((_, index) => {
-      const keys = Object.keys(dados);
-      return keys[index] !== "id" && keys[index] !== "password";
-    });
+    const valores = Object.entries(dados)
+      .filter(([key]) => key in mapeoCampos && key !== "id" && key !== "password")
+      .map(([, value]) => value);
 
     await connection.query<ResultSetHeader>(
-      `UPDATE usuarios SET ${campos} WHERE id = ?`,
+      `UPDATE clientes SET ${campos} WHERE id = ?`,
       [...valores, id]
     );
 
@@ -218,7 +244,7 @@ export async function deletarUsuario(id: string): Promise<boolean> {
 
   try {
     const [result] = await connection.query<ResultSetHeader>(
-      "DELETE FROM usuarios WHERE id = ?",
+      "DELETE FROM clientes WHERE id = ?",
       [id]
     );
 

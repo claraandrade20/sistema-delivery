@@ -33,7 +33,6 @@ import { RestaurantsManagement } from '@features/admin/RestaurantsManagement';
 import { CustomersManagement } from '@features/admin/CustomersManagement';
 import { EmployeesManagement } from '@features/admin/EmployeesManagement';
 import { CouponsManagement } from '@features/admin/CouponsManagement';
-import { ReportsPage } from '@features/admin/ReportsPage';
 
 function AppContent() {
   const { user, isAuthenticated } = useAuth();
@@ -78,8 +77,7 @@ function AppContent() {
         content = (
           <ProductsList 
             onNavigate={navigate} 
-            initialCategoryId={pageData?.categoryId} 
-            searchTerm={searchTerm} // <--- Passando o termo para filtrar a lista
+            initialCategoryId={pageData?.categoryId}
           />
         );
         break;
@@ -109,7 +107,6 @@ function AppContent() {
       <ClientLayout 
         currentPage={currentPage} 
         onNavigate={navigate}
-        onSearch={handleSearch} // <--- Conectando o Layout (barra de busca)
       >
         {content}
       </ClientLayout>
@@ -171,9 +168,6 @@ function AppContent() {
         break;
       case 'coupons':
         content = <CouponsManagement />;
-        break;
-      case 'reports':
-        content = <ReportsPage />;
         break;
       default:
         content = <AdminDashboard onNavigate={navigate} />;

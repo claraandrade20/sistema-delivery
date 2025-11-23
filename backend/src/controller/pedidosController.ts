@@ -1,17 +1,17 @@
 import type { Request, Response } from "express";
-import * as service from "../service/pedidosService";
+import * as service from "../service/pedidosServiceDB";
 
-export function getPedidos(req: Request, res: Response) {
+export async function getPedidos(req: Request, res: Response) {
   try {
     const { customerId, restaurantId } = req.query;
 
     let pedidos;
     if (customerId) {
-      pedidos = service.listarPedidosPorCliente(customerId as string);
+      pedidos = await service.listarPedidosPorCliente(customerId as string);
     } else if (restaurantId) {
-      pedidos = service.listarPedidosPorRestaurante(restaurantId as string);
+      pedidos = await service.listarPedidosPorRestaurante(restaurantId as string);
     } else {
-      pedidos = service.listarPedidos();
+      pedidos = await service.listarPedidos();
     }
 
     res.json(pedidos);
@@ -20,10 +20,10 @@ export function getPedidos(req: Request, res: Response) {
   }
 }
 
-export function getPedidoById(req: Request, res: Response) {
+export async function getPedidoById(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const pedido = service.buscarPedido(id);
+    const pedido = await service.buscarPedido(id);
 
     if (!pedido) {
       return res.status(404).json({ erro: "Pedido não encontrado" });
@@ -35,16 +35,16 @@ export function getPedidoById(req: Request, res: Response) {
   }
 }
 
-export function criarPedido(req: Request, res: Response) {
+export async function criarPedido(req: Request, res: Response) {
   try {
-    const novo = service.adicionarPedido(req.body);
+    const novo = await service.adicionarPedido(req.body);
     res.status(201).json(novo);
   } catch (error: any) {
     res.status(400).json({ erro: error.message });
   }
 }
 
-export function atualizarStatusPedido(req: Request, res: Response) {
+export async function atualizarStatusPedido(req: Request, res: Response) {
   try {
     const { id } = req.params;
     const { status } = req.body;
@@ -53,7 +53,7 @@ export function atualizarStatusPedido(req: Request, res: Response) {
       return res.status(400).json({ erro: "Status é obrigatório" });
     }
 
-    const atualizado = service.atualizarStatusPedido(id, status);
+    const atualizado = await service.atualizarStatusPedido(id, status);
 
     if (!atualizado) {
       return res.status(404).json({ erro: "Pedido não encontrado" });
@@ -65,10 +65,10 @@ export function atualizarStatusPedido(req: Request, res: Response) {
   }
 }
 
-export function atualizarPedido(req: Request, res: Response) {
+export async function atualizarPedido(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const atualizado = service.atualizarPedido(id, req.body);
+    const atualizado = await service.atualizarPedido(id, req.body);
 
     if (!atualizado) {
       return res.status(404).json({ erro: "Pedido não encontrado" });

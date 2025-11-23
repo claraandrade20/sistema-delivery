@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
@@ -7,21 +7,32 @@ import { RadioGroup, RadioGroupItem } from '@shared/ui/radio-group';
 import { Textarea } from '@shared/ui/textarea';
 import { useCart } from '@shared/context/CartContext';
 import { useAuth } from '@shared/context/AuthContext';
-import { mockRestaurants, getUserAddresses } from '@shared/data/mockData';
 import { toast } from 'sonner';
-import { CreditCard, Smartphone, Ticket, Wallet, MapPin, Check } from 'lucide-react';
+import { CreditCard, Smartphone, Ticket, Wallet, MapPin, Check, Loader2 } from 'lucide-react';
 import type { PaymentMethod } from '@shared/types';
+import { pedidosAPI, enderecosAPI } from '@shared/services/api';
 
 interface CheckoutProps {
   onNavigate: (page: string, data?: any) => void;
 }
 
+interface Address {
+  id: string | number;
+  street: string;
+  number: string;
+  complement?: string;
+  district: string;
+  city: string;
+  state: string;
+  status?: 'principal' | 'secundario';
+}
+
 export const Checkout = ({ onNavigate }: CheckoutProps) => {
   const { items, getTotal, clearCart } = useCart();
   const { user } = useAuth();
-  const addresses = user ? getUserAddresses(user.id) : [];
-  const defaultAddress = addresses.find(a => a.isDefault) || addresses[0];
-  const restaurant = mockRestaurants[0];
+  const [addresses, setAddresses] = useState<Address[]>([]);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | number | null>(null);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
 
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [observations, setObservations] = useState('');
@@ -29,9 +40,36 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const subtotal = getTotal();
-  const deliveryFee = restaurant.deliveryFee;
+  const deliveryFee = 10; // Valor padrão
   const discount = 0; // Implementar lógica de cupom
   const total = subtotal + deliveryFee - discount;
+
+  // Carregar endereços do backend
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!user?.email) return;
+      try {
+        setIsLoadingAddresses(true);
+        const data = await enderecosAPI.listar({ userId: user.email });
+        setAddresses(data || []);
+        
+        // Selecionar endereço principal por padrão
+        const principalAddress = data?.find((a: Address) => a.status === 'principal');
+        if (principalAddress) {
+          setSelectedAddressId(principalAddress.id);
+        } else if (data && data.length > 0) {
+          setSelectedAddressId(data[0].id);
+        }
+      } catch (error) {
+        console.error('Erro ao carregar endereços:', error);
+        toast.error('Erro ao carregar endereços');
+      } finally {
+        setIsLoadingAddresses(false);
+      }
+    };
+
+    fetchAddresses();
+  }, [user?.email]);
 
   const paymentMethods = [
     { id: 'pix', label: 'PIX', icon: Smartphone, description: 'Aprovação imediata' },
@@ -41,23 +79,66 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
   ];
 
   const handleConfirmOrder = async () => {
-    if (!defaultAddress) {
-      toast.error('Adicione um endereço de entrega');
+    if (!selectedAddressId) {
+      toast.error('Selecione um endereço de entrega');
+      return;
+    }
+
+    if (!user) {
+      toast.error('Usuário não autenticado');
       return;
     }
 
     setIsProcessing(true);
 
-    // Simular processamento
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    try {
+      const selectedAddr = addresses.find((a: Address) => a.id.toString() === selectedAddressId.toString());
+      if (!selectedAddr) {
+        throw new Error('Endereço não encontrado');
+      }
 
-    const orderId = `order-${Date.now()}`;
-    
-    clearCart();
-    setIsProcessing(false);
-    toast.success('Pedido realizado com sucesso!');
-    onNavigate('order-tracking', { orderId });
+      const addressStr = `${selectedAddr.street}, ${selectedAddr.number}${selectedAddr.complement ? ' - ' + selectedAddr.complement : ''} - ${selectedAddr.district}, ${selectedAddr.city}/${selectedAddr.state}`;
+
+      // Criar pedido no backend
+      const orderData = {
+        customerId: user.id,
+        customerName: user.name,
+        customerPhone: user.phone,
+        restaurantId: 1,
+        restaurantName: 'Restaurante',
+        paymentMethod: paymentMethod,
+        subtotal: subtotal,
+        deliveryFee: deliveryFee,
+        discount: discount,
+        total: total,
+        status: 'pending',
+        deliveryAddress: addressStr,
+        items: items.map((item: any) => ({
+          productId: item.product.id,
+          productName: item.product.name,
+          variationId: item.variationId || null,
+          variationName: item.variationId ? 'Padrão' : null,
+          quantity: item.quantity,
+          subtotal: item.subtotal,
+        })),
+        observations: observations,
+      };
+
+      const response = await pedidosAPI.criar(orderData);
+      const orderId = response.id || `order-${Date.now()}`;
+
+      clearCart();
+      toast.success('Pedido realizado com sucesso!');
+      onNavigate('order-tracking', { orderId });
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao criar pedido');
+      console.error('Erro ao criar pedido:', error);
+    } finally {
+      setIsProcessing(false);
+    }
   };
+
+  const selectedAddress = addresses.find(a => a.id === selectedAddressId);
 
   if (items.length === 0) {
     onNavigate('cart');
@@ -79,15 +160,38 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {defaultAddress ? (
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <p className="font-semibold">{defaultAddress.street}, {defaultAddress.number}</p>
-                  {defaultAddress.complement && <p className="text-sm text-gray-600">{defaultAddress.complement}</p>}
-                  <p className="text-sm text-gray-600">{defaultAddress.neighborhood} - {defaultAddress.city}, {defaultAddress.state}</p>
-                  <p className="text-sm text-gray-600">CEP: {defaultAddress.zipCode}</p>
-                </div>
+              {isLoadingAddresses ? (
+                <p className="text-gray-500">Carregando endereços...</p>
+              ) : addresses.length === 0 ? (
+                <p className="text-gray-500">Nenhum endereço cadastrado. <Button variant="link" onClick={() => onNavigate('profile')}>Adicionar agora</Button></p>
               ) : (
-                <p className="text-gray-500">Nenhum endereço cadastrado</p>
+                <RadioGroup value={selectedAddressId?.toString() || ''} onValueChange={setSelectedAddressId as any}>
+                  <div className="space-y-3">
+                    {addresses.map((address) => (
+                      <div key={address.id} className="flex items-start space-x-3 p-4 rounded-lg border hover:bg-gray-50 cursor-pointer">
+                        <RadioGroupItem value={address.id.toString()} id={`address-${address.id}`} />
+                        <Label htmlFor={`address-${address.id}`} className="flex-1 cursor-pointer">
+                          <div className="flex items-center justify-between mb-1">
+                            <p className="font-semibold">
+                              {address.street}, {address.number}
+                              {address.complement && ` - ${address.complement}`}
+                            </p>
+                            <span className={`text-xs px-2 py-1 rounded ${
+                              address.status === 'principal'
+                                ? 'bg-green-100 text-green-700'
+                                : 'bg-gray-100 text-gray-700'
+                            }`}>
+                              {address.status === 'principal' ? 'Principal' : 'Entrega'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600">
+                            {address.district} - {address.city}, {address.state}
+                          </p>
+                        </Label>
+                      </div>
+                    ))}
+                  </div>
+                </RadioGroup>
               )}
             </CardContent>
           </Card>
@@ -191,7 +295,7 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
               <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded">
                 <p className="flex items-center gap-1">
                   <Check className="h-3 w-3 text-green-600" />
-                  Tempo estimado: {restaurant.estimatedDeliveryTime}
+                  Tempo estimado: 30-45 min
                 </p>
               </div>
               <Button

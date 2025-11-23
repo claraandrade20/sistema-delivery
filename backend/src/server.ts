@@ -6,6 +6,7 @@ import pedidosRoutes from "./routes/pedidos";
 import autenticacaoRoutes from "./routes/autenticacao";
 import enderecosRoutes from "./routes/enderecos";
 import horariosRoutes from "./routes/horarios";
+import cuponsRoutes from "./routes/cupons";
 import pool from "./config/database";
 
 // Carregar variáveis de ambiente do arquivo .env
@@ -36,6 +37,7 @@ app.use("/api/pedidos", pedidosRoutes);
 app.use("/api/auth", autenticacaoRoutes);
 app.use("/api/enderecos", enderecosRoutes);
 app.use("/api/horarios", horariosRoutes);
+app.use("/api/cupons", cuponsRoutes);
 
 // Rota raiz da API
 app.get("/api", (req, res) => {
@@ -48,6 +50,7 @@ app.get("/api", (req, res) => {
       pedidos: "/api/pedidos",
       enderecos: "/api/enderecos",
       horarios: "/api/horarios",
+      cupons: "/api/cupons",
       health: "/api/health",
     },
   });

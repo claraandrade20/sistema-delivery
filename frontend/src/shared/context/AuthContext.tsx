@@ -29,7 +29,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         } catch (error) {
           console.error('Erro ao verificar autenticação:', error);
           localStorage.removeItem('token');
+          setUser(null);
         }
+      } else {
+        setUser(null);
       }
       
       setLoading(false);

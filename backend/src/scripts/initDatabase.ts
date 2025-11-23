@@ -24,6 +24,7 @@ async function runMigration() {
       'categorias',
       'restaurantes',
       'enderecos',
+      'cupons',
       'clientes',
       'usuarios'
     ];
@@ -49,7 +50,7 @@ async function runMigration() {
         senha VARCHAR(255) NOT NULL,
         telefone VARCHAR(100),
         funcao ENUM('funcionario', 'administrador') NOT NULL,
-        id_restaurante INT NOT NULL,
+        id_restaurantes INT NOT NULL,
         ativo BOOLEAN DEFAULT true,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
         atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -86,6 +87,8 @@ async function runMigration() {
         numero VARCHAR(20) NOT NULL,
         complemento VARCHAR(255),
         bairro VARCHAR(255) NOT NULL,
+        cidade VARCHAR(255),
+        estado VARCHAR(2),
         endereco TEXT NOT NULL,
         status ENUM('principal', 'secundario') DEFAULT 'secundario',
         FOREIGN KEY (id_cliente) REFERENCES clientes(id) ON DELETE CASCADE,
@@ -118,7 +121,7 @@ async function runMigration() {
     await connection.execute(`
       CREATE TABLE IF NOT EXISTS horario_funcionamento (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        id_restaurante INT NOT NULL,
+        id_restaurantes INT NOT NULL,
         dia_semana TINYINT NOT NULL,
         nome_dia VARCHAR(20) NOT NULL,
         hora_inicio TIME DEFAULT NULL,
@@ -126,12 +129,37 @@ async function runMigration() {
         fechado BOOLEAN DEFAULT FALSE,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
         atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        FOREIGN KEY (id_restaurante) REFERENCES restaurantes(id) ON DELETE CASCADE,
-        INDEX idx_id_restaurante (id_restaurante),
+        FOREIGN KEY (id_restaurantes) REFERENCES restaurantes(id) ON DELETE CASCADE,
+        INDEX idx_id_restaurantes (id_restaurantes),
         INDEX idx_dia_semana (dia_semana)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela HORARIO_FUNCIONAMENTO criada com sucesso!\n");
+
+    // ============= TABELA CUPONS =============
+    console.log("📋 Criando tabela CUPONS...");
+    await connection.execute(`
+      CREATE TABLE IF NOT EXISTS cupons (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        codigo VARCHAR(50) UNIQUE NOT NULL,
+        descricao VARCHAR(255),
+        tipo_desconto ENUM('percentual', 'fixo') NOT NULL DEFAULT 'percentual',
+        valor_desconto DECIMAL(10,2) NOT NULL,
+        uso_minimo DECIMAL(10,2) DEFAULT 0,
+        quantidade_total INT NOT NULL,
+        quantidade_usada INT DEFAULT 0,
+        ativo BOOLEAN DEFAULT true,
+        data_inicio DATE NOT NULL,
+        data_fim DATE NOT NULL,
+        criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+        atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_codigo (codigo),
+        INDEX idx_ativo (ativo),
+        INDEX idx_data_inicio (data_inicio),
+        INDEX idx_data_fim (data_fim)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+    `);
+    console.log("✅ Tabela CUPONS criada com sucesso!\n");
 
     // ============= TABELA CATEGORIAS =============
     console.log("📋 Criando tabela CATEGORIAS...");
@@ -140,11 +168,11 @@ async function runMigration() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         nome VARCHAR(255) NOT NULL,
         descricao TEXT,
-        id_restaurante INT NOT NULL,
+        id_restaurantes INT NOT NULL,
         ativo BOOLEAN DEFAULT true,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (id_restaurante) REFERENCES restaurantes(id) ON DELETE CASCADE,
-        INDEX idx_id_restaurante (id_restaurante)
+        FOREIGN KEY (id_restaurantes) REFERENCES restaurantes(id) ON DELETE CASCADE,
+        INDEX idx_id_restaurantes (id_restaurantes)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela CATEGORIAS criada com sucesso!\n");
@@ -158,7 +186,7 @@ async function runMigration() {
         descricao TEXT,
         imagem VARCHAR(500),
         id_categoria INT NOT NULL,
-        id_restaurante INT NOT NULL,
+        id_restaurantes INT NOT NULL,
         quantidade_estoque INT DEFAULT 0,
         ativo BOOLEAN DEFAULT true,
         destaque BOOLEAN DEFAULT false,
@@ -168,9 +196,9 @@ async function runMigration() {
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
         atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (id_categoria) REFERENCES categorias(id) ON DELETE CASCADE,
-        FOREIGN KEY (id_restaurante) REFERENCES restaurantes(id) ON DELETE CASCADE,
+        FOREIGN KEY (id_restaurantes) REFERENCES restaurantes(id) ON DELETE CASCADE,
         INDEX idx_id_categoria (id_categoria),
-        INDEX idx_id_restaurante (id_restaurante),
+        INDEX idx_id_restaurantes (id_restaurantes),
         INDEX idx_ativo (ativo)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
@@ -214,7 +242,7 @@ async function runMigration() {
         id_cliente INT NOT NULL,
         nome_cliente VARCHAR(255),
         telefone_cliente VARCHAR(20),
-        id_restaurante INT NOT NULL,
+        id_restaurantes INT NOT NULL,
         nome_restaurante VARCHAR(255),
         metodo_pagamento VARCHAR(50),
         subtotal DECIMAL(10,2) NOT NULL,
@@ -226,9 +254,9 @@ async function runMigration() {
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
         atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         FOREIGN KEY (id_cliente) REFERENCES clientes(id) ON DELETE CASCADE,
-        FOREIGN KEY (id_restaurante) REFERENCES restaurantes(id) ON DELETE CASCADE,
+        FOREIGN KEY (id_restaurantes) REFERENCES restaurantes(id) ON DELETE CASCADE,
         INDEX idx_id_cliente (id_cliente),
-        INDEX idx_id_restaurante (id_restaurante),
+        INDEX idx_id_restaurantes (id_restaurantes),
         INDEX idx_status (status),
         INDEX idx_criado_em (criado_em)
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
@@ -263,17 +291,22 @@ async function runMigration() {
     const usuariosPath = path.join(__dirname, "../data/usuarios.json");
     const produtosPath = path.join(__dirname, "../data/produtos.json");
     const pedidosPath = path.join(__dirname, "../data/pedidos.json");
+    const cuponsPath = path.join(__dirname, "../data/cupons.json");
 
     // Migrate Usuários
     if (fs.existsSync(usuariosPath)) {
       const usuarios = JSON.parse(fs.readFileSync(usuariosPath, "utf-8"));
       console.log(`📤 Inserindo usuários (admin e funcionários)...`);
 
+      let usuarioId = 1;
+      let clienteId = 1;
+
       for (const usuario of usuarios) {
-        // Converter data ISO para formato MySQL
-        const createdAt = usuario.createdAt 
-          ? new Date(usuario.createdAt).toISOString().replace('T', ' ').substring(0, 19)
-          : new Date().toISOString().replace('T', ' ').substring(0, 19);
+        // Validar dados
+        if (!usuario.name || !usuario.email) {
+          console.warn(`⚠️ Usuário ignorado - dados obrigatórios inválidos`);
+          continue;
+        }
 
         // Validar e limpar phone (deve conter apenas números e caracteres de telefone válidos)
         let phone = usuario.phone || null;
@@ -283,37 +316,52 @@ async function runMigration() {
 
         // Apenas inserir admin e employee na tabela usuarios
         if (usuario.role === "employee" || usuario.role === "admin") {
-          await connection.execute(
-            `INSERT INTO usuarios (id, nome, email, senha, telefone, funcao, id_restaurante, ativo, criado_em)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [
-              usuario.id,
-              usuario.name,
-              usuario.email,
-              usuario.password,
-              phone,
-              usuario.role === "admin" ? "administrador" : "funcionario",
-              usuario.restaurantId || null,
-              usuario.isActive !== false,
-              createdAt,
-            ]
-          );
+          // Converter restaurantId para número ou usar 1 como padrão
+          let restaurantId = 1;
+          if (usuario.restaurantId) {
+            const parsed = parseInt(usuario.restaurantId);
+            if (!isNaN(parsed)) {
+              restaurantId = parsed;
+            }
+          }
+
+          try {
+            await connection.execute(
+              `INSERT INTO usuarios (nome, email, senha, telefone, funcao, id_restaurantes, ativo)
+               VALUES (?, ?, ?, ?, ?, ?, ?)`,
+              [
+                usuario.name,
+                usuario.email,
+                usuario.password,
+                phone,
+                usuario.role === "admin" ? "administrador" : "funcionario",
+                restaurantId,
+                usuario.isActive !== false,
+              ]
+            );
+            usuarioId++;
+          } catch (error) {
+            console.warn(`⚠️ Erro ao inserir usuário:`, (error as any).message);
+          }
         }
         // Inserir clientes na tabela clientes
         else if (usuario.role === "client") {
-          await connection.execute(
-            `INSERT INTO clientes (id, nome, email, senha, telefone, ativo, criado_em)
-             VALUES (?, ?, ?, ?, ?, ?, ?)`,
-            [
-              usuario.id,
-              usuario.name,
-              usuario.email,
-              usuario.password,
-              phone,
-              usuario.isActive !== false,
-              createdAt,
-            ]
-          );
+          try {
+            await connection.execute(
+              `INSERT INTO clientes (nome, email, senha, telefone, ativo)
+               VALUES (?, ?, ?, ?, ?)`,
+              [
+                usuario.name,
+                usuario.email,
+                usuario.password,
+                phone,
+                usuario.isActive !== false,
+              ]
+            );
+            clienteId++;
+          } catch (error) {
+            console.warn(`⚠️ Erro ao inserir cliente:`, (error as any).message);
+          }
         }
       }
       console.log("✅ Usuários e clientes inseridos com sucesso!\n");
@@ -322,70 +370,145 @@ async function runMigration() {
     // Inserir restaurantes padrão
     console.log("📤 Inserindo restaurantes...");
     await connection.execute(
-      `INSERT IGNORE INTO restaurantes (id, nome, descricao, email, telefone, ativo)
-       VALUES ('1', 'Pizzaria Bella Napoli', 'Melhor pizzaria da cidade', 'pizza@email.com', '8533333333', true)`
+      `INSERT INTO restaurantes (nome, descricao, email, telefone, ativo)
+       VALUES ('Pizzaria Bella Napoli', 'Melhor pizzaria da cidade', 'pizza@email.com', '8533333333', true)`
+    );
+    await connection.execute(
+      `INSERT INTO restaurantes (nome, descricao, email, telefone, ativo)
+       VALUES ('Burger House Premium', 'Hambúrgueres gourmet irresistíveis', 'burger@email.com', '8534444444', true)`
     );
     console.log("✅ Restaurantes inseridos com sucesso!\n");
 
     // Inserir categorias padrão
     console.log("📤 Inserindo categorias...");
     await connection.execute(
-      `INSERT IGNORE INTO categorias (id, nome, descricao, id_restaurante, ativo)
+      `INSERT INTO categorias (nome, descricao, id_restaurantes, ativo)
        VALUES 
-       ('1', 'Pizzas', 'Pizzas deliciosas', '1', true),
-       ('2', 'Bebidas', 'Bebidas variadas', '1', true)`
+       ('Pizzas', 'Pizzas deliciosas', 1, true),
+       ('Bebidas', 'Bebidas variadas', 1, true),
+       ('Sobremesas', 'Doces e sobremesas deliciosas', 1, true),
+       ('Massas', 'Massas frescas e tradicionais', 1, true),
+       ('Saladas', 'Saladas frescas e saudáveis', 1, true),
+       ('Hambúrgueres', 'Burgers artesanais e gourmet', 2, true)`
     );
     console.log("✅ Categorias inseridas com sucesso!\n");
+
+    // Inserir horários de funcionamento padrão
+    console.log("📤 Inserindo horários de funcionamento...");
+    const diasSemana = [
+      { dia_semana: 0, nome_dia: 'Domingo', hora_inicio: '11:00', hora_fim: '23:00' },
+      { dia_semana: 1, nome_dia: 'Segunda', hora_inicio: '11:00', hora_fim: '23:00' },
+      { dia_semana: 2, nome_dia: 'Terça', hora_inicio: '11:00', hora_fim: '23:00' },
+      { dia_semana: 3, nome_dia: 'Quarta', hora_inicio: '11:00', hora_fim: '23:00' },
+      { dia_semana: 4, nome_dia: 'Quinta', hora_inicio: '11:00', hora_fim: '23:00' },
+      { dia_semana: 5, nome_dia: 'Sexta', hora_inicio: '11:00', hora_fim: '00:00' },
+      { dia_semana: 6, nome_dia: 'Sábado', hora_inicio: '11:00', hora_fim: '00:00' },
+    ];
+
+    for (const dia of diasSemana) {
+      await connection.execute(
+        `INSERT INTO horario_funcionamento (id_restaurantes, dia_semana, nome_dia, hora_inicio, hora_fim, fechado)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        [1, dia.dia_semana, dia.nome_dia, dia.hora_inicio, dia.hora_fim, false]
+      );
+    }
+    console.log("✅ Horários de funcionamento inseridos com sucesso!\n");
+
+    // Migrate Cupons
+    if (fs.existsSync(cuponsPath)) {
+      const cupons = JSON.parse(fs.readFileSync(cuponsPath, "utf-8"));
+      console.log(`📤 Inserindo ${cupons.length} cupons...`);
+
+      for (const cupom of cupons) {
+        try {
+          await connection.execute(
+            `INSERT INTO cupons (codigo, descricao, tipo_desconto, valor_desconto, uso_minimo, quantidade_total, ativo, data_inicio, data_fim)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              cupom.codigo,
+              cupom.descricao || null,
+              cupom.tipoDesconto || "percentual",
+              cupom.valorDesconto,
+              cupom.usoMinimo || 0,
+              cupom.quantidadeTotal,
+              true,
+              cupom.dataInicio,
+              cupom.dataFim,
+            ]
+          );
+        } catch (error) {
+          console.warn(`⚠️ Erro ao inserir cupom ${cupom.codigo}:`, (error as any).message);
+        }
+      }
+      console.log("✅ Cupons inseridos com sucesso!\n");
+    }
 
     // Migrate Produtos com Variações e Adicionais
     if (fs.existsSync(produtosPath)) {
       const produtos = JSON.parse(fs.readFileSync(produtosPath, "utf-8"));
       console.log(`📤 Inserindo ${produtos.length} produtos...`);
 
+      let produtoId = 1;
+      
       for (const produto of produtos) {
-        const categoryId = produto.categoryId || "cat-1";
-        const restaurantId = produto.restaurantId || "rest-1";
-
-        // Inserir produto
-        await connection.execute(
-          `INSERT INTO produtos (id, nome, descricao, imagem, id_categoria, id_restaurante, quantidade_estoque, ativo, destaque, avaliacao, total_avaliacoes, tempo_preparo)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-          [
-            produto.id,
-            produto.name,
-            produto.description || null,
-            produto.image || null,
-            categoryId,
-            restaurantId,
-            produto.stockQuantity || 0,
-            produto.available !== false && produto.isActive !== false,
-            produto.isFeatured || false,
-            produto.rating || 0,
-            produto.reviewsCount || 0,
-            produto.preparationTime || null,
-          ]
-        );
-
-        // Inserir variações
-        if (produto.variations && Array.isArray(produto.variations)) {
-          for (const variation of produto.variations) {
-            await connection.execute(
-              `INSERT INTO variacoes (id, id_produto, nome, preco)
-               VALUES (?, ?, ?, ?)`,
-              [variation.id, produto.id, variation.name, variation.price]
-            );
-          }
+        // Converter categoryId e restaurantId para números
+        let categoryId = 1; // padrão
+        if (produto.categoryId) {
+          const parsed = parseInt(produto.categoryId);
+          categoryId = isNaN(parsed) ? 1 : parsed;
+        }
+        
+        let restaurantId = 1; // padrão
+        if (produto.restaurantId) {
+          const parsed = parseInt(produto.restaurantId);
+          restaurantId = isNaN(parsed) ? 1 : parsed;
         }
 
-        // Inserir adicionais
-        if (produto.addons && Array.isArray(produto.addons)) {
-          for (const addon of produto.addons) {
-            await connection.execute(
-              `INSERT INTO adicionais (id, id_produto, nome, preco)
-               VALUES (?, ?, ?, ?)`,
-              [addon.id, produto.id, addon.name, addon.price]
-            );
+        try {
+          // Inserir produto deixando MySQL gerar ID automaticamente
+          const [result] = await connection.query<any>(
+            `INSERT INTO produtos (nome, descricao, imagem, id_categoria, id_restaurantes, quantidade_estoque, ativo, destaque, avaliacao, total_avaliacoes, tempo_preparo)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [
+              produto.name,
+              produto.description || null,
+              produto.image || null,
+              categoryId,
+              restaurantId,
+              produto.stockQuantity || 0,
+              produto.available !== false && produto.isActive !== false,
+              produto.isFeatured || false,
+              produto.rating || 0,
+              produto.reviewsCount || 0,
+              produto.preparationTime || null,
+            ]
+          );
+
+          const insertedProdutoId = (result as any).insertId;
+
+          // Inserir variações
+          if (produto.variations && Array.isArray(produto.variations)) {
+            for (const variation of produto.variations) {
+              await connection.execute(
+                `INSERT INTO variacoes (id_produto, nome, preco)
+                 VALUES (?, ?, ?)`,
+                [insertedProdutoId, variation.name, variation.price]
+              );
+            }
           }
+
+          // Inserir adicionais
+          if (produto.addons && Array.isArray(produto.addons)) {
+            for (const addon of produto.addons) {
+              await connection.execute(
+                `INSERT INTO adicionais (id_produto, nome, preco)
+                 VALUES (?, ?, ?)`,
+                [insertedProdutoId, addon.name, addon.price]
+              );
+            }
+          }
+        } catch (error) {
+          console.warn(`⚠️ Erro ao inserir produto ${produto.name}:`, (error as any).message);
         }
       }
       console.log("✅ Produtos, variações e adicionais inseridos com sucesso!\n");
@@ -396,18 +519,21 @@ async function runMigration() {
       const pedidos = JSON.parse(fs.readFileSync(pedidosPath, "utf-8"));
       console.log(`📤 Inserindo ${pedidos.length} pedidos...`);
 
-      const insertedPedidoIds = new Set<string>();
+      const insertedPedidoIds = new Set<number>();
 
       for (const pedido of pedidos) {
         // Validar dados obrigatórios
-        if (!pedido.id || !pedido.customerId || !pedido.restaurantId || !pedido.total) {
-          console.warn(`⚠️ Pedido ${pedido.id} ignorado por dados inválidos`);
+        if (!pedido.customerId || !pedido.restaurantId || pedido.total === undefined) {
+          console.warn(`⚠️ Pedido ignorado por dados inválidos`);
           continue;
         }
 
-        // Evitar duplicatas
-        if (insertedPedidoIds.has(pedido.id)) {
-          console.warn(`⚠️ Pedido ${pedido.id} já foi inserido, pulando...`);
+        // Converter restaurantId e customerId para números
+        let customerId = parseInt(pedido.customerId);
+        let restaurantId = parseInt(pedido.restaurantId);
+        
+        if (isNaN(customerId) || isNaN(restaurantId)) {
+          console.warn(`⚠️ Pedido ignorado - IDs inválidos`);
           continue;
         }
 
@@ -427,15 +553,14 @@ async function runMigration() {
           : null;
 
         try {
-          await connection.execute(
-            `INSERT INTO pedidos (id, id_cliente, nome_cliente, telefone_cliente, id_restaurante, nome_restaurante, metodo_pagamento, subtotal, taxa_entrega, desconto, total, status, endereco_entrega, criado_em, atualizado_em)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          const [result] = await connection.query<any>(
+            `INSERT INTO pedidos (id_cliente, nome_cliente, telefone_cliente, id_restaurantes, nome_restaurante, metodo_pagamento, subtotal, taxa_entrega, desconto, total, status, endereco_entrega, criado_em, atualizado_em)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
             [
-              pedido.id,
-              pedido.customerId,
+              customerId,
               pedido.customerName || null,
               pedido.customerPhone || null,
-              pedido.restaurantId,
+              restaurantId,
               pedido.restaurantName || null,
               pedido.paymentMethod || null,
               pedido.subtotal || 0,
@@ -449,19 +574,34 @@ async function runMigration() {
             ]
           );
 
-          insertedPedidoIds.add(pedido.id);
+          const insertedPedidoId = (result as any).insertId;
+          insertedPedidoIds.add(insertedPedidoId);
 
-          // Inserir itens do pedido
+          // Inserir itens do pedido - usar IDs reais dos produtos inseridos
           if (pedido.items && Array.isArray(pedido.items)) {
             for (const item of pedido.items) {
+              // Converter productId para número
+              let produtoId = parseInt(item.productId);
+              if (isNaN(produtoId) || produtoId < 1) {
+                continue; // Pular item com ID inválido
+              }
+              
+              let variacaoId: number | null = null;
+              if (item.variationId) {
+                const parsed = parseInt(item.variationId);
+                if (!isNaN(parsed) && parsed > 0) {
+                  variacaoId = parsed;
+                }
+              }
+
               await connection.execute(
                 `INSERT INTO itens_pedido (id_pedido, id_produto, nome_produto, id_variacao, nome_variacao, quantidade, subtotal)
                  VALUES (?, ?, ?, ?, ?, ?, ?)`,
                 [
-                  pedido.id,
-                  item.productId,
+                  insertedPedidoId,
+                  produtoId,
                   item.productName || null,
-                  item.variationId || null,
+                  variacaoId,
                   item.variationName || null,
                   item.quantity || 1,
                   item.subtotal || item.price * (item.quantity || 1) || 0,
@@ -470,7 +610,7 @@ async function runMigration() {
             }
           }
         } catch (error) {
-          console.warn(`⚠️ Erro ao inserir pedido ${pedido.id}:`, error);
+          console.warn(`⚠️ Erro ao inserir pedido:`, (error as any).message);
         }
       }
       console.log("✅ Pedidos e itens inseridos com sucesso!\n");
@@ -483,6 +623,7 @@ async function runMigration() {
     console.log("  - enderecos");
     console.log("  - restaurantes");
     console.log("  - horario_funcionamento");
+    console.log("  - cupons");
     console.log("  - categorias");
     console.log("  - produtos");
     console.log("  - variacoes");

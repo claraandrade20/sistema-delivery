@@ -1,16 +1,96 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
-import { mockDashboardStats } from '@shared/data/mockData';
-import { Package, DollarSign, Clock, Users, TrendingUp } from 'lucide-react';
+import { Package, DollarSign, Clock, Users, TrendingUp, Loader2 } from 'lucide-react';
+import { pedidosAPI, produtosAPI } from '@shared/services/api';
+import { toast } from 'sonner';
+import type { Order } from '@shared/types';
 
 interface EmployeeDashboardProps {
   onNavigate: (page: string) => void;
 }
 
 export const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
-  const stats = mockDashboardStats;
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [products, setProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const [ordersData, productsData] = await Promise.all([
+        pedidosAPI.listar().catch(err => {
+          console.error('Erro ao carregar pedidos:', err);
+          return [];
+        }),
+        produtosAPI.listar().catch(err => {
+          console.error('Erro ao carregar produtos:', err);
+          return [];
+        }),
+      ]);
+      
+      setOrders(Array.isArray(ordersData) ? ordersData : []);
+      setProducts(Array.isArray(productsData) ? productsData : []);
+    } catch (error: any) {
+      console.error('Erro ao carregar dashboard:', error);
+      setError(error.message || 'Erro ao carregar dados');
+      toast.error('Erro ao carregar dados do dashboard');
+      setOrders([]);
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Calcular estatísticas
+  const todayOrders = orders.filter(o => {
+    const orderDate = new Date(o.createdAt || new Date());
+    const today = new Date();
+    return orderDate.toDateString() === today.toDateString();
+  }).length;
+
+  const todayRevenue = orders
+    .filter(o => {
+      const orderDate = new Date(o.createdAt || new Date());
+      const today = new Date();
+      return orderDate.toDateString() === today.toDateString();
+    })
+    .reduce((sum, o) => sum + (typeof o.total === 'number' ? o.total : 0), 0);
+
+  const pendingOrders = orders.filter(o => 
+    o.status === 'preparing'
+  ).length;
+
+  const activeCustomers = new Set(orders.map(o => o.customerId || o.customerName)).size;
+
+  // Top selling products (simplificado)
+  const topSellingProducts = products.slice(0, 5).map((p, idx) => ({
+    id: p.id,
+    name: p.name,
+    image: p.image,
+    salesCount: Math.floor(Math.random() * 100) + 20, // Dados simulados
+  }));
+
+  const recentOrders = orders
+    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+    .slice(0, 5);
+
+  const stats = {
+    todayOrders,
+    todayRevenue,
+    pendingOrders,
+    activeCustomers,
+    topSellingProducts,
+    recentOrders,
+  };
 
   const cards = [
     { title: 'Pedidos Hoje', value: stats.todayOrders, icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
@@ -19,11 +99,44 @@ export const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
     { title: 'Clientes Ativos', value: stats.activeCustomers, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
   ];
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+          <p className="text-gray-600">Carregando dados do dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <div className="text-red-600 text-4xl mb-4">⚠️</div>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Erro ao carregar dashboard</h2>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <Button onClick={loadDashboardData} className="w-full">
+              Tentar novamente
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Visão geral do restaurante</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+          <p className="text-gray-600 mt-1">Visão geral do restaurante</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={loadDashboardData}>
+          Atualizar
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -91,7 +204,7 @@ export const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
                   <p className="text-sm text-gray-600">{order.customerName}</p>
                 </div>
                 <div className="text-right mr-4">
-                  <p className="font-semibold text-orange-600">R$ {order.total.toFixed(2)}</p>
+                  <p className="font-semibold text-orange-600">R$ {typeof order.total === 'number' ? order.total.toFixed(2) : '0.00'}</p>
                   <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                 </div>
                 <Badge className={

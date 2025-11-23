@@ -1,0 +1,52 @@
+[
+  {
+    "codigo": "PROMO10",
+    "descricao": "10% de desconto em toda a loja",
+    "tipoDesconto": "percentual",
+    "valorDesconto": 10,
+    "usoMinimo": 0,
+    "quantidadeTotal": 100,
+    "dataInicio": "2025-11-22",
+    "dataFim": "2025-12-30"
+  },
+  {
+    "codigo": "DELIVERY5",
+    "descricao": "R$ 5 de desconto na entrega",
+    "tipoDesconto": "fixo",
+    "valorDesconto": 5,
+    "usoMinimo": 20,
+    "quantidadeTotal": 50,
+    "dataInicio": "2025-11-22",
+    "dataFim": "2025-11-29"
+  },
+  {
+    "codigo": "BLACKFRIDAY20",
+    "descricao": "20% off em pedidos acima de R$ 100",
+    "tipoDesconto": "percentual",
+    "valorDesconto": 20,
+    "usoMinimo": 100,
+    "quantidadeTotal": 200,
+    "dataInicio": "2025-11-22",
+    "dataFim": "2025-12-25"
+  },
+  {
+    "codigo": "WELCOME15",
+    "descricao": "15% de desconto para primeiro pedido",
+    "tipoDesconto": "percentual",
+    "valorDesconto": 15,
+    "usoMinimo": 0,
+    "quantidadeTotal": 500,
+    "dataInicio": "2025-11-22",
+    "dataFim": "2025-12-31"
+  },
+  {
+    "codigo": "FRETEGRATIS",
+    "descricao": "Frete grátis em pedidos acima de R$ 50",
+    "tipoDesconto": "fixo",
+    "valorDesconto": 0,
+    "usoMinimo": 50,
+    "quantidadeTotal": 150,
+    "dataInicio": "2025-11-22",
+    "dataFim": "2025-12-31"
+  }
+]

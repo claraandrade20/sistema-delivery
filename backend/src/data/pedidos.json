@@ -72,5 +72,61 @@
     "deliveryAddress": "Rua A, 123",
     "createdAt": "2025-11-22T15:31:58.998Z",
     "updatedAt": "2025-11-22T15:31:58.998Z"
+  },
+  {
+    "id": "order-1763853949372",
+    "customerId": "3",
+    "customerName": "Clara Andrade",
+    "customerPhone": "8596684564",
+    "restaurantId": 1,
+    "restaurantName": "Pizzaria Bella Napoli",
+    "paymentMethod": "pix",
+    "subtotal": 32.9,
+    "deliveryFee": 8.9,
+    "discount": 0,
+    "total": 41.8,
+    "status": "pending",
+    "deliveryAddress": "Rua Professor Edgard de Arruda, 947 - Casa - Henrique Jorge, Fortaleza/CE",
+    "items": [
+      {
+        "productId": "2",
+        "productName": "Pizza Calabresa",
+        "variationId": "2-1",
+        "variationName": "Padrão",
+        "quantity": 1,
+        "subtotal": 32.9
+      }
+    ],
+    "observations": "",
+    "createdAt": "2025-11-22T23:25:49.392Z",
+    "updatedAt": "2025-11-22T23:25:49.392Z"
+  },
+  {
+    "id": "order-1763854250310",
+    "customerId": "3",
+    "customerName": "Clara Andrade",
+    "customerPhone": "8596684564",
+    "restaurantId": 1,
+    "restaurantName": "Pizzaria Bella Napoli",
+    "paymentMethod": "pix",
+    "subtotal": 42.9,
+    "deliveryFee": 8.9,
+    "discount": 0,
+    "total": 51.8,
+    "status": "pending",
+    "deliveryAddress": "Rua Professor Edgard de Arruda, 947 - Casa - Henrique Jorge, Fortaleza/CE",
+    "items": [
+      {
+        "productId": "2",
+        "productName": "Pizza Calabresa",
+        "variationId": "2-2",
+        "variationName": "Padrão",
+        "quantity": 1,
+        "subtotal": 42.9
+      }
+    ],
+    "observations": "",
+    "createdAt": "2025-11-22T23:30:50.311Z",
+    "updatedAt": "2025-11-22T23:30:50.320Z"
   }
 ]

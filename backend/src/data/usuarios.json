@@ -20,10 +20,10 @@
     "isActive": true
   },
   {
-    "id": "1",
+    "id": "3",
     "name": "Carlos Souza",
     "email": "carlos@restaurant.com",
-    "password": "$2a$10$BGQFZMMhTFXi0hNxaBx05OEawiLWEBZbauFnWTe/sfBpWDw5JW//K",
+    "password": "$2a$10$Y7yAj8k0OytNjxika45UAO4ghOBcJRIktCNanjBFusIdsdOI4bK.i",
     "phone": "(85) 99999-8888",
     "role": "employee",
     "createdAt": "2023-11-10T09:00:00Z",
@@ -31,17 +31,17 @@
     "restaurantId": "rest-1"
   },
   {
-    "id": "1",
+    "id": "4",
     "name": "Roberto Admin",
     "email": "admin@deliverysystem.com",
-    "password": "$2a$10$8z/7ltE8u2FPaDmJno2g9eJkB6.Ht2bKEEaLVug9ELawI/l.7Ad.S",
+    "password": "$2a$10$W.cVb8QxBll1PK5G/JXceOtxuwqITz/fbbundNIK.YiokLw5wnyXa",
     "phone": "(85) 77777-6666",
     "role": "admin",
     "createdAt": "2023-01-01T00:00:00Z",
     "isActive": true
   },
   {
-    "id": "1763500819604",
+    "id": "5",
     "name": "Clara Andrade",
     "email": "clara@gmail.com",
     "password": "$2a$10$8fga5elW1cMpB7QwBw4nzOWr.VHSZrHiurPl77lqlKSECiRG1b/5e",
@@ -51,53 +51,33 @@
     "isActive": true
   },
   {
-    "id": "1763724376601",
+    "id": "6",
     "name": "rafael lopes",
     "email": "rafaellopes250106@gmail.com",
     "password": "$2a$10$Tdc6XPD4G4Tv1Psz.f1O/.p42UU.2OnkTUP1WR1utW8WjxKa/1NSq",
-    "phone": null,
+    "phone": "(85) 99212-7498",
     "role": "client",
     "createdAt": "2025-11-21T11:26:16.601Z",
     "isActive": true
   },
   {
-    "id": "1763724897316",
-    "name": "rafael ",
+    "id": "7",
+    "name": "rafael santos",
     "email": "rafaellopes25016@gmail.com",
     "password": "$2a$10$vjH6oocj769YPmBHOHn6GObVg0DeYQLZsjOGzrCLwUR5i/QZM7wAa",
-    "phone": "85992127498",
+    "phone": "(85) 99212-7498",
     "role": "client",
     "createdAt": "2025-11-21T11:34:57.316Z",
     "isActive": true
   },
   {
-    "id": "1763725356435",
-    "name": "lopes",
+    "id": "8",
+    "name": "Lopes Silva",
     "email": "rafaellopes2501@gmail.com",
     "password": "$2a$10$aTd2bWdntuSYOsFAc5BYN.N5FFHsrWRthLr7CVu9LFuPKUxC8HyJC",
-    "phone": null,
+    "phone": "(85) 99999-9999",
     "role": "client",
     "createdAt": "2025-11-21T11:42:36.435Z",
-    "isActive": true
-  },
-  {
-    "id": "1763725734183",
-    "name": "rafael lopes",
-    "email": "rafaellopes250@lopes.com",
-    "password": "$2a$10$T7CSqmmE7VAxkPAn8IctA.vkOzhlWnHg6SyETz9z7ZcdHkXnPu1Ry",
-    "phone": "(85) 99212-7498",
-    "role": "client",
-    "createdAt": "2025-11-21T11:48:54.183Z",
-    "isActive": true
-  },
-  {
-    "id": "1763823082048",
-    "name": "Maria Silva",
-    "email": "maria.silva@email.com",
-    "password": "$2a$10$SwJMBjaUVmRzYNUjEMO3YuJNhd9Rk5cIHPa4ueAoriNi.swbU70pa",
-    "phone": "(85) 98765-1234",
-    "role": "client",
-    "createdAt": "2025-11-22T14:51:22.048Z",
     "isActive": true
   }
 ]

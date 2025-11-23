@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@shared/ui/card';
 import { Button } from '@shared/ui/button';
 import { Input } from '@shared/ui/input';
@@ -11,17 +11,18 @@ import {
   DialogTrigger,
 } from '@shared/ui/dialog';
 import { Label } from '@shared/ui/label';
-import { mockProducts } from '@shared/data/mockData';
 import { toast } from 'sonner';
-import { Plus, Edit, Eye, EyeOff, Search, Trash2 } from 'lucide-react';
+import { Plus, Edit, Eye, EyeOff, Search, Trash2, Loader2 } from 'lucide-react';
+import { produtosAPI } from '@shared/services/api';
 
 interface ProductsManagementProps {
   onNavigate: (page: string) => void;
 }
 
 export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
-  const [products, setProducts] = useState<any[]>(mockProducts);
+  const [products, setProducts] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
   // ---------- Novo Produto ----------
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
@@ -31,16 +32,40 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
   const [newStock, setNewStock] = useState('');
   const [newImageFile, setNewImageFile] = useState<File | null>(null);
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const [savingNew, setSavingNew] = useState(false);
 
   // ---------- Editar Produto ----------
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [savingEdit, setSavingEdit] = useState(false);
 
   // ---------- Deletar Produto ----------
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [productToDelete, setProductToDelete] = useState<any | null>(null);
+  const [deletingProduct, setDeletingProduct] = useState(false);
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
+
+  const loadProducts = async () => {
+    try {
+      setLoading(true);
+      const data = await produtosAPI.listar();
+      setProducts(Array.isArray(data) ? data : []);
+      if (!data || data.length === 0) {
+        console.warn('Nenhum produto retornado da API');
+      }
+    } catch (error: any) {
+      console.error('Erro ao carregar produtos:', error);
+      toast.error('Erro ao carregar produtos: ' + (error.message || 'Tente novamente'));
+      setProducts([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredProducts = products.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -73,7 +98,7 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
     setNewImagePreview(URL.createObjectURL(file));
   };
 
-  const saveNewProduct = () => {
+  const saveNewProduct = async () => {
     if (!newName.trim()) {
       toast.error('Informe o nome do produto.');
       return;
@@ -86,15 +111,10 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
       toast.error('Informe o estoque.');
       return;
     }
-    if (!newImageFile) {
-      toast.error('Envie uma imagem para o produto.');
-      return;
-    }
 
     const priceNumber = Number(newPrice);
     const stockNumber = Number(newStock);
 
-    // 🔒 validação extra contra negativos
     if (isNaN(priceNumber) || priceNumber < 0) {
       toast.error('O preço não pode ser negativo.');
       return;
@@ -104,25 +124,33 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
       return;
     }
 
-    const newProduct = {
-      id: crypto.randomUUID(),
-      name: newName,
-      description: newDescription,
-      image: newImagePreview,
-      isActive: true,
-      variations: [
-        {
-          id: crypto.randomUUID(),
-          name: 'Padrão',
-          price: priceNumber,
-          stock: stockNumber,
-        },
-      ],
-    };
+    try {
+      setSavingNew(true);
+      const newProduct = {
+        name: newName,
+        description: newDescription,
+        image: newImagePreview,
+        stockQuantity: stockNumber,
+        isActive: true,
+        variations: [
+          {
+            id: '1',
+            name: 'Padrão',
+            price: priceNumber,
+          },
+        ],
+      };
 
-    setProducts((prev) => [...prev, newProduct]);
-    toast.success('Produto criado!');
-    setIsNewModalOpen(false);
+      const created = await produtosAPI.criar(newProduct);
+      setProducts((prev) => [...prev, created]);
+      toast.success('Produto criado com sucesso!');
+      setIsNewModalOpen(false);
+    } catch (error) {
+      toast.error('Erro ao criar produto');
+      console.error(error);
+    } finally {
+      setSavingNew(false);
+    }
   };
 
   // -------- Modal: Editar Produto --------
@@ -140,25 +168,31 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
     setEditImagePreview(URL.createObjectURL(file));
   };
 
-  const saveEditProduct = () => {
+  const saveEditProduct = async () => {
     if (!editingProduct.name.trim()) {
       toast.error('Nome obrigatório.');
       return;
     }
 
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === editingProduct.id
-          ? {
-              ...editingProduct,
-              image: editImagePreview || p.image,
-            }
-          : p
-      )
-    );
+    try {
+      setSavingEdit(true);
+      const updated = await produtosAPI.atualizar(editingProduct.id, {
+        ...editingProduct,
+        image: editImagePreview || editingProduct.image,
+      });
+      
+      setProducts((prev) =>
+        prev.map((p) => (p.id === editingProduct.id ? updated : p))
+      );
 
-    toast.success('Produto atualizado!');
-    setIsEditModalOpen(false);
+      toast.success('Produto atualizado com sucesso!');
+      setIsEditModalOpen(false);
+    } catch (error) {
+      toast.error('Erro ao atualizar produto');
+      console.error(error);
+    } finally {
+      setSavingEdit(false);
+    }
   };
 
   // -------- Modal: Deletar Produto --------
@@ -167,13 +201,22 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDeleteProduct = () => {
+  const confirmDeleteProduct = async () => {
     if (!productToDelete) return;
 
-    setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
-    toast.success('Produto removido com sucesso!');
-    setIsDeleteModalOpen(false);
-    setProductToDelete(null);
+    try {
+      setDeletingProduct(true);
+      await produtosAPI.deletar(productToDelete.id);
+      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
+      toast.success('Produto removido com sucesso!');
+      setIsDeleteModalOpen(false);
+      setProductToDelete(null);
+    } catch (error) {
+      toast.error('Erro ao remover produto');
+      console.error(error);
+    } finally {
+      setDeletingProduct(false);
+    }
   };
 
   return (
@@ -183,85 +226,112 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
         <h1 className="text-3xl font-bold text-gray-900">Gerenciar Produtos</h1>
 
         {/* Botão Novo Produto */}
-        <Dialog open={isNewModalOpen} onOpenChange={setIsNewModalOpen}>
-          <DialogTrigger asChild>
-            <Button
-              className="bg-blue-500 hover:bg-blue-600"
-              onClick={openNewModal}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Adicionar Produto
-            </Button>
-          </DialogTrigger>
-
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Novo Produto</DialogTitle>
-            </DialogHeader>
-
-            <div className="space-y-4">
-              <Label>Nome *</Label>
-              <Input
-                value={newName}
-                onChange={(e) => setNewName(e.target.value)}
-              />
-
-              <Label>Descrição</Label>
-              <Input
-                value={newDescription}
-                onChange={(e) => setNewDescription(e.target.value)}
-              />
-
-              <Label>Imagem *</Label>
-              <div className="border rounded p-3 bg-gray-50">
-                <Input type="file" accept="image/*" onChange={handleNewImage} />
-                {newImagePreview && (
-                  <img
-                    src={newImagePreview}
-                    className="w-32 h-32 rounded object-cover mt-2"
-                  />
-                )}
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Preço *</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={newPrice}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // permite campo vazio ou número >= 0
-                      if (value === '' || Number(value) > 0) {
-                        setNewPrice(value);
-                      }
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <Label>Estoque *</Label>
-                  <Input
-                    type="number"
-                    min={0}
-                    value={newStock}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      if (value === '' || Number(value) > 0) {
-                        setNewStock(value);
-                      }
-                    }}
-                  />
-                </div>
-              </div>
-
-              <Button className="w-full" onClick={saveNewProduct}>
-                Salvar Produto
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={loadProducts}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Carregando...
+              </>
+            ) : (
+              'Atualizar'
+            )}
+          </Button>
+          <Dialog open={isNewModalOpen} onOpenChange={setIsNewModalOpen}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-blue-500 hover:bg-blue-600"
+                onClick={openNewModal}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Produto
               </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>Novo Produto</DialogTitle>
+              </DialogHeader>
+
+              <div className="space-y-4">
+                <Label>Nome *</Label>
+                <Input
+                  value={newName}
+                  onChange={(e) => setNewName(e.target.value)}
+                />
+
+                <Label>Descrição</Label>
+                <Input
+                  value={newDescription}
+                  onChange={(e) => setNewDescription(e.target.value)}
+                />
+
+                <Label>Imagem *</Label>
+                <div className="border rounded p-3 bg-gray-50">
+                  <Input type="file" accept="image/*" onChange={handleNewImage} />
+                  {newImagePreview && (
+                    <img
+                      src={newImagePreview}
+                      className="w-32 h-32 rounded object-cover mt-2"
+                    />
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Preço *</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={newPrice}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || Number(value) > 0) {
+                          setNewPrice(value);
+                        }
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <Label>Estoque *</Label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={newStock}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (value === '' || Number(value) > 0) {
+                          setNewStock(value);
+                        }
+                      }}
+                    />
+                  </div>
+                </div>
+
+                <Button 
+                  className="w-full" 
+                  onClick={saveNewProduct}
+                  disabled={savingNew}
+                >
+                  {savingNew ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Salvando...
+                    </>
+                  ) : (
+                    'Salvar Produto'
+                  )}
+                </Button>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Campo de Busca */}
@@ -276,72 +346,84 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
       </div>
 
       {/* Lista de Produtos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredProducts.map((product) => (
-          <Card key={product.id}>
-            <CardContent className="p-4">
-              <img
-                src={product.image}
-                alt={product.name}
-                className="w-full h-48 rounded object-cover mb-3"
-              />
+      {loading ? (
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+        </div>
+      ) : filteredProducts.length === 0 ? (
+        <Card>
+          <CardContent className="flex flex-col items-center justify-center py-12">
+            <p className="text-gray-500 text-lg">Nenhum produto encontrado</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {filteredProducts.map((product) => (
+            <Card key={product.id}>
+              <CardContent className="p-4">
+                <img
+                  src={product.image}
+                  alt={product.name}
+                  className="w-full h-48 rounded object-cover mb-3"
+                />
 
-              <div className="flex justify-between mb-2">
-                <div>
-                  <h3 className="font-semibold">{product.name}</h3>
-                  <p className="text-sm text-gray-600">{product.description}</p>
+                <div className="flex justify-between mb-2">
+                  <div>
+                    <h3 className="font-semibold">{product.name}</h3>
+                    <p className="text-sm text-gray-600">{product.description}</p>
+                  </div>
+
+                  {product.isActive ? (
+                    <Badge className="bg-green-500">Ativo</Badge>
+                  ) : (
+                    <Badge variant="secondary">Inativo</Badge>
+                  )}
                 </div>
 
-                {product.isActive ? (
-                  <Badge className="bg-green-500">Ativo</Badge>
-                ) : (
-                  <Badge variant="secondary">Inativo</Badge>
-                )}
-              </div>
+                <p className="font-bold text-orange-600 mb-3">
+                  A partir de R$ {(product.variations?.[0]?.price || 0).toFixed(2)}
+                </p>
 
-              <p className="font-bold text-orange-600 mb-3">
-                A partir de R$ {product.variations[0].price.toFixed(2)}
-              </p>
+                <div className="flex gap-2">
+                  {/* Editar */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1"
+                    onClick={() => openEditModal(product)}
+                  >
+                    <Edit className="h-3 w-3 mr-1" />
+                    Editar
+                  </Button>
 
-              <div className="flex gap-2">
-                {/* Editar */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => openEditModal(product)}
-                >
-                  <Edit className="h-3 w-3 mr-1" />
-                  Editar
-                </Button>
+                  {/* Ativar/Inativar */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => toggleProductStatus(product.id)}
+                  >
+                    {product.isActive ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </Button>
 
-                {/* Ativar/Inativar */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => toggleProductStatus(product.id)}
-                >
-                  {product.isActive ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </Button>
-
-                {/* Deletar */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-red-600 border-red-200 hover:bg-red-50"
-                  onClick={() => openDeleteModal(product)}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+                  {/* Deletar */}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="text-red-600 border-red-200 hover:bg-red-50"
+                    onClick={() => openDeleteModal(product)}
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
 
       {/* MODAL DE EDIÇÃO */}
       {editingProduct && (
@@ -382,8 +464,19 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
                 )}
               </div>
 
-              <Button className="w-full" onClick={saveEditProduct}>
-                Salvar Alterações
+              <Button 
+                className="w-full" 
+                onClick={saveEditProduct}
+                disabled={savingEdit}
+              >
+                {savingEdit ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  'Salvar Alterações'
+                )}
               </Button>
             </div>
           </DialogContent>
@@ -409,14 +502,23 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
               <Button
                 variant="outline"
                 onClick={() => setIsDeleteModalOpen(false)}
+                disabled={deletingProduct}
               >
                 Cancelar
               </Button>
               <Button
                 className="bg-red-600 hover:bg-red-700 text-white"
                 onClick={confirmDeleteProduct}
+                disabled={deletingProduct}
               >
-                Remover
+                {deletingProduct ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Removendo...
+                  </>
+                ) : (
+                  'Remover'
+                )}
               </Button>
             </div>
           </DialogContent>

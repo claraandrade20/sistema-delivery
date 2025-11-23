@@ -59,7 +59,7 @@ export function registrarUsuario(dados: {
   return usuarioSemSenha;
 }
 
-export function fazerLogin(email: string, password: string): LoginResponse {
+export async function fazerLogin(email: string, password: string): Promise<LoginResponse> {
   const usuarios: Usuario[] = lerJSON(caminhoUsuarios);
 
   console.log(`[LOGIN] Tentativa de login: ${email}`);

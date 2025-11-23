@@ -1,7 +1,7 @@
 import React from 'react';
 import { useAuth } from '@shared/context/AuthContext';
 import { Button } from '@shared/ui/button';
-import { LayoutDashboard, Store, Users, UserCog, Ticket, FileText, LogOut, Shield } from 'lucide-react';
+import { LayoutDashboard, Store, Users, UserCog, Ticket, LogOut, Shield } from 'lucide-react';
 
 interface AdminLayoutProps {
   children: React.ReactNode;
@@ -18,7 +18,6 @@ export const AdminLayout = ({ children, currentPage, onNavigate }: AdminLayoutPr
     { id: 'customers', label: 'Clientes', icon: Users },
     { id: 'employees', label: 'Funcionários', icon: UserCog },
     { id: 'coupons', label: 'Cupons', icon: Ticket },
-    { id: 'reports', label: 'Relatórios', icon: FileText },
   ];
 
   return (

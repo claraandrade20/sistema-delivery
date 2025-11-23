@@ -2,11 +2,30 @@
 
 export type UserRole = 'client' | 'employee' | 'admin';
 
-export type OrderStatus = 'received' | 'preparing' | 'on_the_way' | 'delivered' | 'cancelled';
+export type OrderStatus = 
+  | 'received' 
+  | 'preparing' 
+  | 'on_the_way' 
+  | 'delivered' 
+  | 'cancelled'
+  | 'pending'
+  | 'confirmed';
 
 export type PaymentMethod = 'credit_card' | 'pix' | 'meal_voucher' | 'cash';
 
 export type CouponType = 'percentage' | 'fixed';
+
+// ========== Validation Types ==========
+
+export interface ValidationError {
+  field: string;
+  message: string;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+}
 
 // ========== User Types ==========
 
@@ -19,6 +38,8 @@ export interface User {
   createdAt: string;
   isActive: boolean;
   restaurantId?: string; // Para funcionários
+  lastLogin?: string;
+  avatar?: string;
 }
 
 export interface Address {
@@ -32,6 +53,9 @@ export interface Address {
   state: string;
   zipCode: string;
   isDefault: boolean;
+  label?: string; // "Casa", "Trabalho", etc.
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ========== Product Types ==========
@@ -44,18 +68,23 @@ export interface Category {
   isActive: boolean;
   order: number;
   restaurantId: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface ProductVariation {
   id: string;
   name: string; // Ex: "Pequena", "Média", "Grande"
   price: number;
+  stock?: number;
+  sku?: string;
 }
 
 export interface ProductAddon {
   id: string;
   name: string; // Ex: "Borda recheada", "Bacon extra"
   price: number;
+  isActive?: boolean;
 }
 
 export interface Product {
@@ -73,30 +102,42 @@ export interface Product {
   rating?: number;
   reviewsCount?: number;
   preparationTime?: number; // em minutos
+  createdAt?: string;
+  updatedAt?: string;
+  minOrder?: number;
+  maxOrder?: number;
 }
 
 // ========== Cart Types ==========
 
-export interface CartItem {
+export interface OrderItem {
   productId: string;
-  product: Product;
+  product?: Product;
+  productName?: string;
   variationId: string;
-  variation: ProductVariation;
-  addons: ProductAddon[];
+  variation?: ProductVariation;
+  variationName?: string;
+  addons?: ProductAddon[];
   quantity: number;
   subtotal: number;
+}
+
+export interface CartItem extends OrderItem {
+  product: Product;
+  variation: ProductVariation;
 }
 
 // ========== Order Types ==========
 
 export interface Order {
   id: string;
-  customerId: string;
+  customerId?: string;
   customerName: string;
   customerPhone: string;
+  customerEmail?: string;
   restaurantId: string;
-  restaurantName: string;
-  items: CartItem[];
+  restaurantName?: string;
+  items: OrderItem[];
   deliveryAddress: Address;
   paymentMethod: PaymentMethod;
   subtotal: number;
@@ -107,8 +148,11 @@ export interface Order {
   couponCode?: string;
   observations?: string;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
   estimatedDeliveryTime?: string;
+  deliveryPersonId?: string;
+  rating?: number;
+  review?: string;
 }
 
 // ========== Restaurant Types ==========
@@ -134,6 +178,9 @@ export interface Restaurant {
   minimumOrder?: number;
   deliveryFee: number;
   estimatedDeliveryTime: string; // Ex: "30-45 min"
+  createdAt?: string;
+  updatedAt?: string;
+  categories?: Category[];
 }
 
 // ========== Coupon Types ==========
@@ -151,6 +198,7 @@ export interface Coupon {
   usageLimit?: number;
   usageCount: number;
   restaurantId?: string; // Se for específico de um restaurante
+  createdAt?: string;
 }
 
 // ========== Promotion Types ==========
@@ -166,6 +214,8 @@ export interface Promotion {
   isActive: boolean;
   validFrom: string;
   validUntil: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 // ========== Stock Types ==========
@@ -179,6 +229,7 @@ export interface StockItem {
   minQuantity: number; // Estoque mínimo
   lastUpdated: string;
   restaurantId: string;
+  warnings?: string[];
 }
 
 // ========== Analytics Types ==========
@@ -194,6 +245,7 @@ export interface SalesReport {
     quantity: number;
     revenue: number;
   }[];
+  ordersByStatus: Record<OrderStatus, number>;
 }
 
 export interface DashboardStats {
@@ -208,4 +260,22 @@ export interface DashboardStats {
     salesCount: number;
   }[];
   recentOrders: Order[];
+}
+
+// ========== Response Types ==========
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  message?: string;
+  timestamp?: string;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
 }

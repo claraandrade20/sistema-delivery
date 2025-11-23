@@ -23,22 +23,28 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     headers.set('Authorization', `Bearer ${token}`);
   }
 
-  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  try {
+    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ erro: 'Erro desconhecido' }));
-    throw new Error(error.erro || `Erro ${response.status}`);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ erro: 'Erro desconhecido' }));
+      throw new Error(error.erro || `Erro ${response.status}`);
+    }
+
+    // Para respostas 204 (No Content)
+    if (response.status === 204) {
+      return null;
+    }
+
+    return response.json();
+  } catch (error: any) {
+    // Log de erro sem interromper
+    console.error(`API Error [${endpoint}]:`, error.message);
+    throw error;
   }
-
-  // Para respostas 204 (No Content)
-  if (response.status === 204) {
-    return null;
-  }
-
-  return response.json();
 }
 
 // ========== Autenticação ==========
@@ -203,10 +209,54 @@ export const horariosAPI = {
   },
 };
 
+// ========== Cupons ==========
+
+export const cuponsAPI = {
+  listar: async () => {
+    return fetchAPI('/cupons');
+  },
+
+  buscarPorId: async (id: string) => {
+    return fetchAPI(`/cupons/${id}`);
+  },
+
+  buscarPorCodigo: async (codigo: string) => {
+    return fetchAPI(`/cupons/codigo/${codigo}`);
+  },
+
+  criar: async (cupom: any) => {
+    return fetchAPI('/cupons', {
+      method: 'POST',
+      body: JSON.stringify(cupom),
+    });
+  },
+
+  atualizar: async (id: string, cupom: any) => {
+    return fetchAPI(`/cupons/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(cupom),
+    });
+  },
+
+  deletar: async (id: string) => {
+    return fetchAPI(`/cupons/${id}`, {
+      method: 'DELETE',
+    });
+  },
+
+  usar: async (codigo: string) => {
+    return fetchAPI('/cupons/usar', {
+      method: 'POST',
+      body: JSON.stringify({ codigo }),
+    });
+  },
+};
+
 export default {
   auth: authAPI,
   produtos: produtosAPI,
   pedidos: pedidosAPI,
   enderecos: enderecosAPI,
   horarios: horariosAPI,
+  cupons: cuponsAPI,
 };

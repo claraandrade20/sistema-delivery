@@ -19,10 +19,10 @@ export const ClientProfile = () => {
   // Carrega endereços do backend ao montar o componente
   useEffect(() => {
     const fetchAddresses = async () => {
-      if (!user?.id) return;
+      if (!user?.email) return;
       try {
         setIsLoadingAddresses(true);
-        const data = await api.enderecos.listar({ userId: user.id });
+        const data = await api.enderecos.listar({ userId: user.email });
         setAddresses(data || []);
       } catch (error) {
         console.error('Erro ao carregar endereços:', error);
@@ -33,7 +33,7 @@ export const ClientProfile = () => {
     };
 
     fetchAddresses();
-  }, [user?.id]);
+  }, [user?.email]);
 
   const handleUpdateProfile = () => {
     toast.success('Perfil atualizado com sucesso!');
@@ -93,8 +93,9 @@ export const ClientProfile = () => {
       {!isLoadingAddresses && (
         <AddressesSection
           addresses={addresses}
-          userId={user?.id || ''}
+          userId={user?.email || ''}
           onAddAddress={handleAddAddress}
+          onUpdateAddresses={setAddresses}
         />
       )}
     </div>
