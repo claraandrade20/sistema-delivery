@@ -54,7 +54,35 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
     try {
       setLoading(true);
       const data = await produtosAPI.listar();
-      setProducts(Array.isArray(data) ? data : []);
+      
+      // Adaptar dados do banco para o formato do frontend
+      const adaptedProducts = Array.isArray(data) ? data.map((p: any) => ({
+        id: String(p.id),
+        name: p.nome || p.name,
+        description: p.descricao || p.description,
+        image: p.imagem || p.image,
+        categoryId: String(p.id_categoria || p.categoryId),
+        restaurantId: String(p.id_restaurantes || p.restaurantId),
+        stockQuantity: p.quantidade_estoque ?? p.stockQuantity ?? 0,
+        isActive: p.ativo ?? p.isActive ?? true,
+        isFeatured: p.destaque ?? p.isFeatured,
+        rating: p.avaliacao ?? p.rating,
+        reviewsCount: p.total_avaliacoes ?? p.reviewsCount,
+        preparationTime: p.tempo_preparo ?? p.preparationTime,
+        variations: (p.variacoes || p.variations || []).map((v: any) => ({
+          id: String(v.id),
+          name: v.nome || v.name,
+          price: v.preco ?? v.price ?? 0,
+        })),
+        addons: (p.adicionais || p.addons || []).map((a: any) => ({
+          id: String(a.id),
+          name: a.nome || a.name,
+          price: a.preco ?? a.price ?? 0,
+        })),
+      })) : [];
+
+      setProducts(adaptedProducts);
+      
       if (!data || data.length === 0) {
         console.warn('Nenhum produto retornado da API');
       }
@@ -127,22 +155,42 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
     try {
       setSavingNew(true);
       const newProduct = {
-        name: newName,
-        description: newDescription,
-        image: newImagePreview,
-        stockQuantity: stockNumber,
-        isActive: true,
-        variations: [
+        nome: newName,
+        descricao: newDescription,
+        imagem: newImagePreview,
+        id_categoria: 1, // Categoria padrão (Pizzas)
+        id_restaurantes: 1, // Restaurante padrão
+        quantidade_estoque: stockNumber,
+        ativo: true,
+        destaque: false,
+        variacoes: [
           {
-            id: '1',
-            name: 'Padrão',
-            price: priceNumber,
+            nome: 'Padrão',
+            preco: priceNumber,
           },
         ],
       };
 
       const created = await produtosAPI.criar(newProduct);
-      setProducts((prev) => [...prev, created]);
+      
+      // Adaptar resposta do banco
+      const adaptedProduct = {
+        id: String(created.id),
+        name: created.nome,
+        description: created.descricao,
+        image: created.imagem,
+        categoryId: String(created.id_categoria),
+        restaurantId: String(created.id_restaurantes),
+        stockQuantity: created.quantidade_estoque,
+        isActive: created.ativo,
+        variations: (created.variacoes || []).map((v: any) => ({
+          id: String(v.id),
+          name: v.nome,
+          price: v.preco,
+        })),
+      };
+      
+      setProducts((prev) => [adaptedProduct, ...prev]);
       toast.success('Produto criado com sucesso!');
       setIsNewModalOpen(false);
     } catch (error) {
@@ -176,13 +224,30 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
 
     try {
       setSavingEdit(true);
-      const updated = await produtosAPI.atualizar(editingProduct.id, {
+      
+      // Converter para formato do banco
+      const dataToUpdate = {
+        nome: editingProduct.name,
+        descricao: editingProduct.description,
+        imagem: editImagePreview || editingProduct.image,
+        quantidade_estoque: editingProduct.stockQuantity,
+        ativo: editingProduct.isActive,
+      };
+      
+      const updated = await produtosAPI.atualizar(editingProduct.id, dataToUpdate);
+      
+      // Adaptar resposta
+      const adaptedProduct = {
         ...editingProduct,
-        image: editImagePreview || editingProduct.image,
-      });
+        name: updated.nome || editingProduct.name,
+        description: updated.descricao || editingProduct.description,
+        image: updated.imagem || editingProduct.image,
+        stockQuantity: updated.quantidade_estoque ?? editingProduct.stockQuantity,
+        isActive: updated.ativo ?? editingProduct.isActive,
+      };
       
       setProducts((prev) =>
-        prev.map((p) => (p.id === editingProduct.id ? updated : p))
+        prev.map((p) => (p.id === editingProduct.id ? adaptedProduct : p))
       );
 
       toast.success('Produto atualizado com sucesso!');
@@ -211,9 +276,24 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
       toast.success('Produto removido com sucesso!');
       setIsDeleteModalOpen(false);
       setProductToDelete(null);
-    } catch (error) {
-      toast.error('Erro ao remover produto');
-      console.error(error);
+    } catch (error: any) {
+      // Extrair mensagem de erro mais amigável
+      let errorMessage = 'Erro ao remover produto';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Mensagem especial para produto com pedidos
+      if (errorMessage.includes('pedidos associados')) {
+        toast.error(errorMessage, {
+          duration: 5000,
+        });
+      } else {
+        toast.error(errorMessage);
+      }
+      
+      console.error('Erro ao deletar produto:', error);
     } finally {
       setDeletingProduct(false);
     }
@@ -381,7 +461,7 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
                 </div>
 
                 <p className="font-bold text-orange-600 mb-3">
-                  A partir de R$ {(product.variations?.[0]?.price || 0).toFixed(2)}
+                  A partir de R$ {Number(product.variations?.[0]?.price || 0).toFixed(2)}
                 </p>
 
                 <div className="flex gap-2">
@@ -491,12 +571,19 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
               <DialogTitle>Remover produto</DialogTitle>
             </DialogHeader>
 
-            <p className="text-sm text-gray-600">
-              Tem certeza que deseja remover{' '}
-              <span className="font-semibold">{productToDelete.name}</span>?
-              <br />
-              Essa ação não pode ser desfeita.
-            </p>
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600">
+                Tem certeza que deseja remover{' '}
+                <span className="font-semibold">{productToDelete.name}</span>?
+              </p>
+              
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-yellow-800 text-xs">
+                  <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita.
+                  Se este produto estiver em pedidos existentes, a remoção será bloqueada para manter a integridade dos dados.
+                </p>
+              </div>
+            </div>
 
             <div className="mt-6 flex justify-end gap-2">
               <Button

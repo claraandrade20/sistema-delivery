@@ -8,7 +8,9 @@
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint . --ext .ts",
-    "migrate": "ts-node src/scripts/initDatabase.ts"
+    "migrate": "ts-node src/scripts/initDatabase.ts",
+    "add-test-product": "ts-node src/scripts/addTestProduct.ts",
+    "add-test-category": "ts-node src/scripts/addTestCategory.ts"
   },
   "keywords": [
     "delivery",

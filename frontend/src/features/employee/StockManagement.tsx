@@ -22,7 +22,7 @@ export const StockManagement = () => {
       const data = await produtosAPI.listar();
       setProducts(Array.isArray(data) ? data : []);
       if (!data || data.length === 0) {
-        console.warn('Nenhum produto com estoque retornado');
+        console.warn('Nenhum produto retornado');
       }
     } catch (error: any) {
       console.error('Erro ao carregar produtos:', error);
@@ -40,7 +40,7 @@ export const StockManagement = () => {
     const newStock = (product.stockQuantity || 0) + change;
     
     if (newStock < 0) {
-      toast.error('Estoque não pode ser negativo');
+      toast.error('Quantidade não pode ser negativa');
       return;
     }
 
@@ -54,9 +54,9 @@ export const StockManagement = () => {
       setProducts(prev =>
         prev.map(p => (p.id === productId ? updated : p))
       );
-      toast.success(`Estoque atualizado!`);
+      toast.success(`Quantidade atualizada!`);
     } catch (error) {
-      toast.error('Erro ao atualizar estoque');
+      toast.error('Erro ao atualizar quantidade');
       console.error(error);
     } finally {
       setUpdating(null);
@@ -74,7 +74,7 @@ export const StockManagement = () => {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">Gestão de Estoque</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Gestão de Produtos</h1>
         <Button 
           variant="outline" 
           size="sm"
@@ -105,7 +105,7 @@ export const StockManagement = () => {
                     <div className="flex-1">
                       <h3 className="font-semibold text-gray-900">{product.name}</h3>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-sm text-gray-600">Estoque atual:</span>
+                        <span className="text-sm text-gray-600">Quantidade:</span>
                         {isLowStock && (
                           <AlertTriangle className="h-4 w-4 text-orange-500" />
                         )}

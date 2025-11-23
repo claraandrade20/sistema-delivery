@@ -5,6 +5,9 @@ const API_BASE_URL = (import.meta as any).env?.VITE_API_URL || 'http://localhost
 async function fetchAPI(endpoint: string, options: RequestInit = {}) {
   const token = localStorage.getItem('token');
   
+  console.log(`[API] ${options.method || 'GET'} ${endpoint}`);
+  console.log(`[API] Token: ${token ? 'presente' : 'ausente'}`);
+  
   // Use a Headers instance so we can safely call .set(...) for Authorization
   const headers = new Headers({
     'Content-Type': 'application/json',
@@ -21,6 +24,9 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
 
   if (token) {
     headers.set('Authorization', `Bearer ${token}`);
+    console.log(`[API] Authorization header definido`);
+  } else {
+    console.log(`[API] AVISO: Token não encontrado no localStorage`);
   }
 
   try {
@@ -301,6 +307,113 @@ export const categoriasAPI = {
   },
 };
 
+// ========== Clientes ==========
+
+export const clientesAPI = {
+  listar: async () => {
+    return fetchAPI('/clientes');
+  },
+
+  buscarPorId: async (id: string) => {
+    return fetchAPI(`/clientes/${id}`);
+  },
+
+  atualizar: async (id: string, cliente: any) => {
+    return fetchAPI(`/clientes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(cliente),
+    });
+  },
+
+  alternarStatus: async (id: string) => {
+    return fetchAPI(`/clientes/${id}/toggle-status`, {
+      method: 'PATCH',
+    });
+  },
+
+  deletar: async (id: string) => {
+    return fetchAPI(`/clientes/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ========== Funcionários ==========
+
+export const funcionariosAPI = {
+  listar: async () => {
+    return fetchAPI('/funcionarios');
+  },
+
+  buscarPorId: async (id: string) => {
+    return fetchAPI(`/funcionarios/${id}`);
+  },
+
+  criar: async (funcionario: any) => {
+    return fetchAPI('/funcionarios', {
+      method: 'POST',
+      body: JSON.stringify(funcionario),
+    });
+  },
+
+  atualizar: async (id: string, funcionario: any) => {
+    return fetchAPI(`/funcionarios/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(funcionario),
+    });
+  },
+
+  alternarStatus: async (id: string) => {
+    return fetchAPI(`/funcionarios/${id}/toggle-status`, {
+      method: 'PATCH',
+    });
+  },
+
+  deletar: async (id: string) => {
+    return fetchAPI(`/funcionarios/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+// ========== Restaurantes ==========
+
+export const restaurantesAPI = {
+  listar: async () => {
+    return fetchAPI('/restaurantes');
+  },
+
+  buscarPorId: async (id: string) => {
+    return fetchAPI(`/restaurantes/${id}`);
+  },
+
+  criar: async (restaurante: any) => {
+    return fetchAPI('/restaurantes', {
+      method: 'POST',
+      body: JSON.stringify(restaurante),
+    });
+  },
+
+  atualizar: async (id: string, restaurante: any) => {
+    return fetchAPI(`/restaurantes/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(restaurante),
+    });
+  },
+
+  alternarStatus: async (id: string) => {
+    return fetchAPI(`/restaurantes/${id}/status`, {
+      method: 'PATCH',
+    });
+  },
+
+  deletar: async (id: string) => {
+    return fetchAPI(`/restaurantes/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 export default {
   auth: authAPI,
   produtos: produtosAPI,
@@ -309,4 +422,7 @@ export default {
   horarios: horariosAPI,
   cupons: cuponsAPI,
   categorias: categoriasAPI,
+  clientes: clientesAPI,
+  funcionarios: funcionariosAPI,
+  restaurantes: restaurantesAPI,
 };

@@ -12,19 +12,25 @@ export interface TokenPayload {
 export function autenticar(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
 
+  console.log(`[AUTH] Rota: ${req.method} ${req.path}`);
+  console.log(`[AUTH] Authorization header: ${authHeader ? 'presente' : 'ausente'}`);
+
   if (!authHeader) {
+    console.log('[AUTH] Token não fornecido');
     return res.status(401).json({ erro: "Token não fornecido" });
   }
 
   const parts = authHeader.split(" ");
 
   if (parts.length !== 2) {
+    console.log('[AUTH] Formato de token inválido');
     return res.status(401).json({ erro: "Formato de token inválido" });
   }
 
   const [scheme, token] = parts;
 
   if (!/^Bearer$/i.test(scheme)) {
+    console.log('[AUTH] Token mal formatado');
     return res.status(401).json({ erro: "Token mal formatado" });
   }
 
@@ -33,8 +39,10 @@ export function autenticar(req: Request, res: Response, next: NextFunction) {
     (req as any).userId = decoded.id;
     (req as any).userEmail = decoded.email;
     (req as any).userRole = decoded.role;
+    console.log(`[AUTH] Token válido - User: ${decoded.email}, Role: ${decoded.role}`);
     return next();
   } catch (error) {
+    console.log('[AUTH] Token inválido:', error);
     return res.status(401).json({ erro: "Token inválido" });
   }
 }

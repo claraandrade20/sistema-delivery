@@ -16,7 +16,6 @@ export const EmployeeLayout = ({ children, currentPage, onNavigate }: EmployeeLa
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'orders', label: 'Pedidos', icon: Package },
     { id: 'products', label: 'Produtos', icon: ShoppingBag },
-    { id: 'stock', label: 'Estoque', icon: Archive },
     { id: 'categories', label: 'Categorias', icon: Tag },
     { id: 'hours', label: 'Horários', icon: Clock },
   ];

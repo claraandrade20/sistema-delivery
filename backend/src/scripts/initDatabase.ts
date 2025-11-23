@@ -108,6 +108,10 @@ async function runMigration() {
         imagem VARCHAR(500),
         email VARCHAR(255),
         telefone VARCHAR(20),
+        endereco VARCHAR(500),
+        taxa_entrega DECIMAL(10, 2) DEFAULT 0,
+        pedido_minimo DECIMAL(10, 2) DEFAULT 0,
+        avaliacao DECIMAL(2, 1),
         ativo BOOLEAN DEFAULT true,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
         atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
@@ -115,6 +119,23 @@ async function runMigration() {
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
     `);
     console.log("✅ Tabela RESTAURANTES criada com sucesso!\n");
+
+    // ============= INSERIR RESTAURANTES DE EXEMPLO =============
+    console.log("📤 Inserindo restaurantes de exemplo...");
+    try {
+      await connection.execute(
+        `INSERT INTO restaurantes (nome, descricao, imagem, email, telefone, endereco, taxa_entrega, pedido_minimo, avaliacao, ativo)
+         VALUES 
+         ('Pizzaria Bella Napoli', 'As melhores pizzas artesanais da cidade', 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400', 'contato@bellanapoli.com', '(85) 3456-7890', 'Rua Vergueiro, 2000 - Vila Mariana, Fortaleza - CE', 8.90, 25.00, 4.8, true),
+         ('Burger House Premium', 'Hambúrgueres gourmet irresistíveis', 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=400', 'contato@burgerhouse.com', '(85) 2345-6789', 'Av. Faria Lima, 3000 - Itaim Bibi, Fortaleza - CE', 6.50, 20.00, 4.6, true),
+         ('Sushi Master', 'Culinária japonesa autêntica', 'https://images.unsplash.com/photo-1579584425555-c3ce17fd4351?w=400', 'contato@sushimaster.com', '(85) 3567-8901', 'Rua Augusta, 1500 - Consolação, Fortaleza - CE', 10.00, 30.00, 4.9, true),
+         ('Cantina Italiana', 'Massas frescas e tradicionais', 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?w=400', 'contato@cantinaitaliana.com', '(85) 2456-7890', 'Rua Oscar Freire, 800 - Jardins, Fortaleza - CE', 7.50, 22.00, 4.7, true),
+         ('Taco Mexicano', 'Sabores autênticos do México', 'https://images.unsplash.com/photo-1565299585323-38d6b0865b47?w=400', 'contato@tacomexicano.com', '(85) 3678-9012', 'Av. Paulista, 2500 - Bela Vista, Fortaleza - CE', 9.00, 28.00, 4.5, true)`
+      );
+      console.log("✅ Restaurantes de exemplo inseridos com sucesso!\n");
+    } catch (error) {
+      console.warn(`⚠️ Erro ao inserir restaurantes de exemplo:`, (error as any).message);
+    }
 
     // ============= TABELA HORARIO_FUNCIONAMENTO =============
     console.log("📋 Criando tabela HORARIO_FUNCIONAMENTO...");
