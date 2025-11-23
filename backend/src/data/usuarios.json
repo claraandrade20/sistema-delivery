@@ -23,18 +23,18 @@
     "id": "3",
     "name": "Carlos Souza",
     "email": "carlos@restaurant.com",
-    "password": "$2a$10$903CD3eseDStvGGmgFkJYe0niuPvUUpGUYeoLUs23hNuhK8D5BO.m",
+    "password": "$2a$10$cz/qiq78AUFhG7/TNN9dOufsRShmkpvI.rxGeTPF3jvY4Fj5B0Oae",
     "phone": "(85) 99999-8888",
     "role": "employee",
     "createdAt": "2023-11-10T09:00:00Z",
     "isActive": true,
-    "restaurantId": "rest-1"
+    "restaurantId": "1"
   },
   {
     "id": "4",
     "name": "Roberto Admin",
     "email": "admin@deliverysystem.com",
-    "password": "$2a$10$UeWBRkZsaQf4C6VHIfOT7uIPfBX9NDKRQZyGS043x89X394X4RS9y",
+    "password": "$2a$10$2BVESf9Md/k32fTyQfF4nOZeXDjgDAobwSyalU/3ofTsjO5xUWMaW",
     "phone": "(85) 77777-6666",
     "role": "admin",
     "createdAt": "2023-01-01T00:00:00Z",

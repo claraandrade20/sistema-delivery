@@ -158,30 +158,34 @@ export const OrderTracking = ({ orderId, onNavigate }: OrderTrackingProps) => {
         <CardContent className="space-y-3">
           {order.items && order.items.length > 0 ? (
             <>
-              {order.items.map((item, index) => (
-                <div key={index} className="flex justify-between">
-                  <span className="text-gray-600">{item.quantity}x {item.productName} {item.variationName ? `(${item.variationName})` : ''}</span>
-                  <span className="font-semibold">R$ {item.subtotal?.toFixed(2) || '0.00'}</span>
-                </div>
-              ))}
+              {order.items.map((item, index) => {
+                // Garantir que subtotal seja número
+                const itemSubtotal = typeof item.subtotal === 'number' ? item.subtotal : parseFloat(item.subtotal || 0);
+                return (
+                  <div key={index} className="flex justify-between">
+                    <span className="text-gray-600">{item.quantity}x {item.productName} {item.variationName ? `(${item.variationName})` : ''}</span>
+                    <span className="font-semibold">R$ {itemSubtotal.toFixed(2)}</span>
+                  </div>
+                );
+              })}
               <div className="border-t pt-3 space-y-2">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
-                  <span>R$ {order.subtotal?.toFixed(2) || '0.00'}</span>
+                  <span>R$ {(typeof order.subtotal === 'number' ? order.subtotal : parseFloat(order.subtotal || 0)).toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Taxa de entrega</span>
-                  <span>R$ {order.deliveryFee?.toFixed(2) || '0.00'}</span>
+                  <span>R$ {(typeof order.deliveryFee === 'number' ? order.deliveryFee : parseFloat(order.deliveryFee || 0)).toFixed(2)}</span>
                 </div>
-                {order.discount > 0 && (
+                {(typeof order.discount === 'number' ? order.discount : parseFloat(order.discount || 0)) > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Desconto</span>
-                    <span>- R$ {order.discount?.toFixed(2) || '0.00'}</span>
+                    <span>- R$ {(typeof order.discount === 'number' ? order.discount : parseFloat(order.discount || 0)).toFixed(2)}</span>
                   </div>
                 )}
                 <div className="flex justify-between font-bold text-lg border-t pt-2">
                   <span>Total</span>
-                  <span className="text-orange-600">R$ {order.total?.toFixed(2) || '0.00'}</span>
+                  <span className="text-orange-600">R$ {(typeof order.total === 'number' ? order.total : parseFloat(order.total || 0)).toFixed(2)}</span>
                 </div>
               </div>
             </>

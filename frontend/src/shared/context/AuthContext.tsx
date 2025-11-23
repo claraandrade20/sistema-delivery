@@ -26,8 +26,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         try {
           const userData = await authAPI.getMe();
           setUser(userData);
-        } catch (error) {
-          console.error('Erro ao verificar autenticação:', error);
+        } catch (error: any) {
+          // Apenas logar erro se não for 401 (não autorizado é esperado quando token expira)
+          if (error?.message && !error.message.includes('401')) {
+            console.error('Erro ao verificar autenticação:', error);
+          }
+          // Limpar token inválido
           localStorage.removeItem('token');
           setUser(null);
         }

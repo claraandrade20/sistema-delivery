@@ -13,20 +13,20 @@ interface OrdersManagementProps {
 }
 
 const statusOptions: { value: OrderStatus; label: string; icon: any }[] = [
-  { value: 'received', label: 'Aceitar Pedido', icon: Package },
+  { value: 'confirmed', label: 'Aceitar Pedido', icon: Package },
   { value: 'preparing', label: 'Em Preparo', icon: Clock },
   { value: 'on_the_way', label: 'A Caminho', icon: Truck },
   { value: 'delivered', label: 'Entregue', icon: CheckCircle },
 ];
 
 const statusLabels: Record<string, string> = {
-  'received': 'Recebido',
+  'pending': 'Pendente',
+  'confirmed': 'Confirmado',
   'preparing': 'Em Preparo',
+  'ready': 'Pronto',
   'on_the_way': 'A Caminho',
   'delivered': 'Entregue',
   'cancelled': 'Cancelado',
-  'pending': 'Pendente',
-  'confirmed': 'Confirmado',
 };
 
 export const OrdersManagement = ({ onNavigate }: OrdersManagementProps) => {
@@ -63,17 +63,25 @@ export const OrdersManagement = ({ onNavigate }: OrdersManagementProps) => {
     ? orders 
     : orders.filter(o => o.status === filterStatus);
 
-  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
+  const updateOrderStatus = async (orderId: string | number, newStatus: OrderStatus) => {
     try {
-      setUpdating(orderId);
-      await pedidosAPI.atualizarStatus(orderId, newStatus);
+      console.log('📝 Enviando atualização de status:', { orderId, newStatus });
+      setUpdating(String(orderId));
+      
+      const response = await pedidosAPI.atualizarStatus(String(orderId), newStatus);
+      console.log('✅ Resposta do servidor:', response);
+      
+      // Atualizar a lista local com os dados retornados do servidor
       setOrders(orders.map(o => 
-        o.id === orderId ? { ...o, status: newStatus, updatedAt: new Date().toISOString() } : o
+        String(o.id) === String(orderId) ? { ...o, status: newStatus, updatedAt: new Date().toISOString() } : o
       ));
+      
       toast.success(`Pedido #${orderId} atualizado para: ${statusLabels[newStatus]}`);
-    } catch (error) {
-      toast.error('Erro ao atualizar pedido');
-      console.error(error);
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Erro ao atualizar pedido';
+      console.error('❌ Erro completo:', error);
+      console.error('❌ Tentando atualizar pedido:', { orderId: String(orderId), newStatus });
+      toast.error(errorMessage);
     } finally {
       setUpdating(null);
     }
@@ -109,7 +117,8 @@ export const OrdersManagement = ({ onNavigate }: OrdersManagementProps) => {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Todos ({orders.length})</SelectItem>
-              <SelectItem value="received">Recebidos ({orders.filter(o => o.status === 'received').length})</SelectItem>
+              <SelectItem value="pending">Pendentes ({orders.filter(o => o.status === 'pending').length})</SelectItem>
+              <SelectItem value="confirmed">Confirmados ({orders.filter(o => o.status === 'confirmed').length})</SelectItem>
               <SelectItem value="preparing">Em Preparo ({orders.filter(o => o.status === 'preparing').length})</SelectItem>
               <SelectItem value="on_the_way">A Caminho ({orders.filter(o => o.status === 'on_the_way').length})</SelectItem>
               <SelectItem value="delivered">Entregues ({orders.filter(o => o.status === 'delivered').length})</SelectItem>
@@ -140,7 +149,8 @@ export const OrdersManagement = ({ onNavigate }: OrdersManagementProps) => {
                     order.status === 'delivered' ? 'bg-green-500' :
                     order.status === 'on_the_way' ? 'bg-purple-500' :
                     order.status === 'preparing' ? 'bg-yellow-500' :
-                    order.status === 'received' ? 'bg-blue-500' : 'bg-gray-500'
+                    order.status === 'confirmed' ? 'bg-blue-500' :
+                    order.status === 'pending' ? 'bg-orange-500' : 'bg-gray-500'
                   }>
                     {statusLabels[order.status] || order.status}
                   </Badge>

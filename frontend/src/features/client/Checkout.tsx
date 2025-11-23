@@ -186,19 +186,19 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
         restaurantId: 1,
         restaurantName: 'Restaurante',
         paymentMethod: paymentMethod,
-        subtotal: subtotal,
-        deliveryFee: finalDeliveryFee,
-        discount: finalDiscount,
-        total: total,
+        subtotal: Number(subtotal),
+        deliveryFee: Number(finalDeliveryFee),
+        discount: Number(finalDiscount),
+        total: Number(total),
         status: 'pending',
         deliveryAddress: addressStr,
         items: items.map((item: any) => ({
-          productId: item.product.id,
+          productId: Number(item.product.id),
           productName: item.product.name,
-          variationId: item.variationId || null,
+          variationId: item.variationId ? Number(item.variationId) : null,
           variationName: item.variationId ? 'Padrão' : null,
-          quantity: item.quantity,
-          subtotal: item.subtotal,
+          quantity: Number(item.quantity),
+          subtotal: Number(item.subtotal),
         })),
         observations: observations,
       };
@@ -324,10 +324,10 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
                       <p className="text-sm text-green-600">
                         {appliedCoupon.descricao}
                       </p>
-                      <p className="text-sm text-green-600">
-                        Desconto: {appliedCoupon.tipo_desconto === 'percentual' 
-                          ? `${appliedCoupon.valor_desconto}%` 
-                          : `R$ ${appliedCoupon.valor_desconto.toFixed(2)}`
+                        <p className="text-sm text-green-600">
+                        Desconto: {appliedCoupon.tipo_desconto === 'percentual'
+                          ? `${appliedCoupon.valor_desconto}%`
+                          : `R$ ${Number(appliedCoupon.valor_desconto || 0).toFixed(2)}`
                         }
                       </p>
                     </div>

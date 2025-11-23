@@ -129,25 +129,6 @@
     "preparationTime": 30
   },
   {
-    "id": "4",
-    "name": "Coca-Cola 2L",
-    "description": "Refrigerante Coca-Cola 2 litros",
-    "image": "https://images.unsplash.com/photo-1732029543356-44fadaeeca51",
-    "categoryId": "2",
-    "restaurantId": "1",
-    "variations": [
-      {
-        "id": "4-1",
-        "name": "Unidade",
-        "price": 12.9
-      }
-    ],
-    "stockQuantity": 100,
-    "isActive": true,
-    "rating": 5,
-    "reviewsCount": 89
-  },
-  {
     "id": "5",
     "name": "Guaraná Antarctica 2L",
     "description": "Refrigerante Guaraná Antarctica 2 litros",

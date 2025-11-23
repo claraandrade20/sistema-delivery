@@ -85,7 +85,6 @@ export const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
   const cards = [
     { title: 'Total Restaurantes', value: stats.totalRestaurants, icon: Store, color: 'text-blue-600', bg: 'bg-blue-50' },
     { title: 'Total Clientes', value: stats.totalCustomers, icon: Users, color: 'text-green-600', bg: 'bg-green-50' },
-    { title: 'Faturamento Hoje', value: `R$ ${stats.todayRevenue.toFixed(2)}`, icon: DollarSign, color: 'text-purple-600', bg: 'bg-purple-50' },
     { title: 'Pedidos Hoje', value: stats.todayOrders, icon: Package, color: 'text-orange-600', bg: 'bg-orange-50' },
   ];
 

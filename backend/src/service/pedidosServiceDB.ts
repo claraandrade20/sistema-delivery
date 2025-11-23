@@ -8,6 +8,11 @@ export interface PedidoItem {
   variationName?: string;
   quantity: number;
   subtotal: number;
+  product?: {
+    id: string;
+    name: string;
+    image: string;
+  };
 }
 
 export interface Pedido {
@@ -40,7 +45,28 @@ export async function listarPedidos(): Promise<Pedido[]> {
       `SELECT * FROM pedidos ORDER BY criado_em DESC`
     );
 
-    return (rows as any[]).map(row => formatarPedido(row));
+    const pedidos: Pedido[] = [];
+    
+    for (const row of (rows as any[])) {
+      // Buscar itens do pedido
+      const [items] = await connection.query(
+        `SELECT * FROM itens_pedido WHERE id_pedido = ?`,
+        [row.id]
+      );
+
+      row.items = (items as any[]).map(item => ({
+        productId: item.id_produto,
+        productName: item.nome_produto,
+        variationId: item.id_variacao,
+        variationName: item.nome_variacao,
+        quantity: item.quantidade,
+        subtotal: item.subtotal,
+      }));
+
+      pedidos.push(formatarPedido(row));
+    }
+
+    return pedidos;
   } finally {
     connection.release();
   }
@@ -64,9 +90,12 @@ export async function buscarPedido(id: string): Promise<Pedido | null> {
 
     const pedido = (rows as any[])[0];
     
-    // Buscar itens do pedido
+    // Buscar itens do pedido com informações do produto
     const [items] = await connection.query(
-      `SELECT * FROM itens_pedido WHERE id_pedido = ?`,
+      `SELECT ip.*, p.imagem as produto_imagem 
+       FROM itens_pedido ip
+       LEFT JOIN produtos p ON ip.id_produto = p.id
+       WHERE ip.id_pedido = ?`,
       [id]
     );
 
@@ -77,6 +106,11 @@ export async function buscarPedido(id: string): Promise<Pedido | null> {
       variationName: item.nome_variacao,
       quantity: item.quantidade,
       subtotal: item.subtotal,
+      product: {
+        id: item.id_produto,
+        name: item.nome_produto,
+        image: item.produto_imagem || '',
+      }
     }));
 
     return formatarPedido(pedido);
@@ -97,7 +131,36 @@ export async function listarPedidosPorCliente(customerId: string): Promise<Pedid
       [customerId]
     );
 
-    return (rows as any[]).map(row => formatarPedido(row));
+    const pedidos: Pedido[] = [];
+    
+    for (const row of (rows as any[])) {
+      // Buscar itens do pedido com informações do produto
+      const [items] = await connection.query(
+        `SELECT ip.*, p.imagem as produto_imagem 
+         FROM itens_pedido ip
+         LEFT JOIN produtos p ON ip.id_produto = p.id
+         WHERE ip.id_pedido = ?`,
+        [row.id]
+      );
+
+      row.items = (items as any[]).map(item => ({
+        productId: item.id_produto,
+        productName: item.nome_produto,
+        variationId: item.id_variacao,
+        variationName: item.nome_variacao,
+        quantity: item.quantidade,
+        subtotal: item.subtotal,
+        product: {
+          id: item.id_produto,
+          name: item.nome_produto,
+          image: item.produto_imagem || '',
+        }
+      }));
+
+      pedidos.push(formatarPedido(row));
+    }
+
+    return pedidos;
   } finally {
     connection.release();
   }
@@ -115,7 +178,36 @@ export async function listarPedidosPorRestaurante(restaurantId: string): Promise
       [restaurantId]
     );
 
-    return (rows as any[]).map(row => formatarPedido(row));
+    const pedidos: Pedido[] = [];
+    
+    for (const row of (rows as any[])) {
+      // Buscar itens do pedido com informações do produto
+      const [items] = await connection.query(
+        `SELECT ip.*, p.imagem as produto_imagem 
+         FROM itens_pedido ip
+         LEFT JOIN produtos p ON ip.id_produto = p.id
+         WHERE ip.id_pedido = ?`,
+        [row.id]
+      );
+
+      row.items = (items as any[]).map(item => ({
+        productId: item.id_produto,
+        productName: item.nome_produto,
+        variationId: item.id_variacao,
+        variationName: item.nome_variacao,
+        quantity: item.quantidade,
+        subtotal: item.subtotal,
+        product: {
+          id: item.id_produto,
+          name: item.nome_produto,
+          image: item.produto_imagem || '',
+        }
+      }));
+
+      pedidos.push(formatarPedido(row));
+    }
+
+    return pedidos;
   } finally {
     connection.release();
   }
@@ -233,6 +325,13 @@ export async function atualizarStatusPedido(
   const connection = await pool.getConnection();
 
   try {
+    // Buscar o pedido antes de atualizar para obter os dados
+    const pedido = await buscarPedido(id);
+    if (!pedido) {
+      return null;
+    }
+
+    // Atualizar status
     await connection.query(
       `UPDATE pedidos SET status = ? WHERE id = ?`,
       [status, id]
@@ -289,7 +388,7 @@ function formatarPedido(row: any): Pedido {
     customerPhone: row.telefone_cliente,
     restaurantId: row.id_restaurantes,
     restaurantName: row.nome_restaurante,
-    items: [],
+    items: row.items || [],
     deliveryAddress: row.endereco_entrega,
     paymentMethod: row.metodo_pagamento,
     subtotal: row.subtotal,

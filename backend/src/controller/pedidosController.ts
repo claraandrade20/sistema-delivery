@@ -49,18 +49,31 @@ export async function atualizarStatusPedido(req: Request, res: Response) {
     const { id } = req.params;
     const { status } = req.body;
 
+    console.log('📝 Atualizando pedido:', { id, status, body: req.body });
+
     if (!status) {
+      console.error('❌ Status não fornecido');
       return res.status(400).json({ erro: "Status é obrigatório" });
+    }
+
+    // Validar status aceitos (devem corresponder ao ENUM do banco)
+    const statusValidos = ['pending', 'confirmed', 'preparing', 'ready', 'on_the_way', 'delivered', 'cancelled'];
+    if (!statusValidos.includes(status)) {
+      console.error('❌ Status inválido:', status);
+      return res.status(400).json({ erro: `Status inválido. Use um dos seguintes: ${statusValidos.join(', ')}` });
     }
 
     const atualizado = await service.atualizarStatusPedido(id, status);
 
     if (!atualizado) {
+      console.error('❌ Pedido não encontrado:', id);
       return res.status(404).json({ erro: "Pedido não encontrado" });
     }
 
+    console.log('✅ Pedido atualizado com sucesso:', atualizado.id);
     res.json(atualizado);
   } catch (error: any) {
+    console.error('❌ Erro ao atualizar status do pedido:', error);
     res.status(400).json({ erro: error.message });
   }
 }

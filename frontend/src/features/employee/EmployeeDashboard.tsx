@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@shared/ui/card';
 import { Badge } from '@shared/ui/badge';
 import { Button } from '@shared/ui/button';
-import { Package, DollarSign, Clock, Users, TrendingUp, Loader2 } from 'lucide-react';
+import { Package, Clock, Users, TrendingUp, Loader2, RefreshCw } from 'lucide-react';
 import { pedidosAPI, produtosAPI } from '@shared/services/api';
 import { toast } from 'sonner';
+import { useAuth } from '@shared/context/AuthContext';
 import type { Order } from '@shared/types';
 
 interface EmployeeDashboardProps {
@@ -12,92 +13,200 @@ interface EmployeeDashboardProps {
 }
 
 export const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
+  const { user } = useAuth();
   const [orders, setOrders] = useState<Order[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   useEffect(() => {
-    loadDashboardData();
-  }, []);
+    if (user?.restaurantId) {
+      loadDashboardData();
+      // Atualizar dados a cada 30 segundos
+      const interval = setInterval(loadDashboardData, 30000);
+      return () => clearInterval(interval);
+    }
+  }, [user?.restaurantId]);
 
   const loadDashboardData = async () => {
     try {
-      setLoading(true);
+      if (!isRefreshing) setLoading(true);
       setError(null);
       
+      // Obter o restaurantId do usuário autenticado
+      const restaurantId = user?.restaurantId || "1";
+      
+      console.log('Carregando dados do dashboard para restaurante:', restaurantId);
+      
+      // Buscar dados em paralelo do banco de dados
       const [ordersData, productsData] = await Promise.all([
-        pedidosAPI.listar().catch(err => {
+        pedidosAPI.listar({ restaurantId }).catch(err => {
           console.error('Erro ao carregar pedidos:', err);
-          return [];
+          throw err; // Propagar erro para ser tratado no catch principal
         }),
-        produtosAPI.listar().catch(err => {
+        produtosAPI.listar({ restaurantId }).catch(err => {
           console.error('Erro ao carregar produtos:', err);
-          return [];
+          throw err; // Propagar erro para ser tratado no catch principal
         }),
       ]);
       
-      setOrders(Array.isArray(ordersData) ? ordersData : []);
-      setProducts(Array.isArray(productsData) ? productsData : []);
+      console.log('✅ Pedidos carregados do banco:', ordersData?.length || 0);
+      console.log('✅ Produtos carregados do banco:', productsData?.length || 0);
+      
+      // Garantir que são arrays válidos
+      const ordersArray = Array.isArray(ordersData) ? ordersData : [];
+      const productsArray = Array.isArray(productsData) ? productsData : [];
+      
+      // Processar pedidos para garantir formato correto
+      const processedOrders = ordersArray.map(order => ({
+        ...order,
+        createdAt: order.createdAt || new Date().toISOString(),
+        items: order.items || [],
+        total: typeof order.total === 'number' ? order.total : 0,
+      }));
+      
+      setOrders(processedOrders);
+      setProducts(productsArray);
+      
+      console.log('📊 Dashboard atualizado - Pedidos:', processedOrders.length, 'Produtos:', productsArray.length);
+      
+      if (isRefreshing) {
+        toast.success('Dashboard atualizado com sucesso');
+      }
     } catch (error: any) {
       console.error('Erro ao carregar dashboard:', error);
       setError(error.message || 'Erro ao carregar dados');
-      toast.error('Erro ao carregar dados do dashboard');
+      if (isRefreshing) {
+        toast.error('Erro ao atualizar dashboard');
+      }
       setOrders([]);
       setProducts([]);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
-  // Calcular estatísticas
-  const todayOrders = orders.filter(o => {
-    const orderDate = new Date(o.createdAt || new Date());
-    const today = new Date();
-    return orderDate.toDateString() === today.toDateString();
-  }).length;
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await loadDashboardData();
+  };
 
-  const todayRevenue = orders
-    .filter(o => {
-      const orderDate = new Date(o.createdAt || new Date());
+  // Função auxiliar para verificar se é hoje
+  const isToday = (dateString: string) => {
+    try {
+      const orderDate = new Date(dateString);
       const today = new Date();
       return orderDate.toDateString() === today.toDateString();
-    })
-    .reduce((sum, o) => sum + (typeof o.total === 'number' ? o.total : 0), 0);
+    } catch {
+      return false;
+    }
+  };
 
-  const pendingOrders = orders.filter(o => 
-    o.status === 'preparing'
-  ).length;
+  // Calcular estatísticas baseadas nos dados do banco
+  const todayOrders = orders.filter(o => {
+    const isTodayOrder = isToday(o.createdAt);
+    const isDelivered = o.status === 'delivered';
+    return isTodayOrder && isDelivered;
+  }).length;
 
-  const activeCustomers = new Set(orders.map(o => o.customerId || o.customerName)).size;
+  const pendingOrders = orders.filter(o => {
+    const isPending = o.status === 'preparing' || o.status === 'pending' || o.status === 'confirmed';
+    return isPending; // Todos os pendentes, não só de hoje
+  }).length;
 
-  // Top selling products (simplificado)
-  const topSellingProducts = products.slice(0, 5).map((p, idx) => ({
-    id: p.id,
-    name: p.name,
-    image: p.image,
-    salesCount: Math.floor(Math.random() * 100) + 20, // Dados simulados
-  }));
+  const activeCustomers = new Set(
+    orders
+      .filter(o => isToday(o.createdAt))
+      .map(o => o.customerId || o.customerName)
+      .filter(id => id) // Remover valores vazios
+  ).size;
 
+  // Top selling products (contar ocorrências em pedidos do dia) - dados do banco
+  const productSalesMap = new Map<string, { name: string; image: string; count: number }>();
+  
+  orders.forEach(order => {
+    if (isToday(order.createdAt)) {
+      order.items?.forEach(item => {
+        // Obter ID do produto do banco de dados
+        const productId = String(item.productId || (item.product?.id as string) || '');
+        if (productId && productId !== '') {
+          // Nome do produto vem do banco (item.productName ou item.product.name)
+          const productName = item.productName || item.product?.name || 'Produto sem nome';
+          // Imagem do produto vem do banco
+          const productImage = item.product?.image || '';
+          const quantity = Number(item.quantity) || 1;
+          
+          const existing = productSalesMap.get(productId);
+          if (existing) {
+            existing.count += quantity;
+          } else {
+            productSalesMap.set(productId, {
+              name: productName,
+              image: productImage,
+              count: quantity,
+            });
+          }
+        }
+      });
+    }
+  });
+
+  const topSellingProducts = Array.from(productSalesMap.values())
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 3)
+    .map((p, idx) => ({
+      id: String(idx + 1),
+      name: p.name,
+      image: p.image,
+      salesCount: p.count,
+    }));
+
+  // Pedidos recentes do dia (ordenados por data mais recente) - dados do banco
   const recentOrders = orders
-    .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime())
+    .filter(o => isToday(o.createdAt))
+    .sort((a, b) => {
+      try {
+        return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      } catch {
+        return 0;
+      }
+    })
     .slice(0, 5);
 
   const stats = {
     todayOrders,
-    todayRevenue,
     pendingOrders,
     activeCustomers,
-    topSellingProducts,
+    topSellingProducts: topSellingProducts.length > 0 ? topSellingProducts : [
+      { id: '1', name: 'Nenhum produto', image: '', salesCount: 0 }
+    ],
     recentOrders,
   };
 
   const cards = [
     { title: 'Pedidos Hoje', value: stats.todayOrders, icon: Package, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { title: 'Faturamento Hoje', value: `R$ ${stats.todayRevenue.toFixed(2)}`, icon: DollarSign, color: 'text-green-600', bg: 'bg-green-50' },
     { title: 'Pedidos Pendentes', value: stats.pendingOrders, icon: Clock, color: 'text-orange-600', bg: 'bg-orange-50' },
     { title: 'Clientes Ativos', value: stats.activeCustomers, icon: Users, color: 'text-purple-600', bg: 'bg-purple-50' },
   ];
+
+  // Verificar se o usuário tem restaurantId
+  if (!user?.restaurantId) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <Card className="max-w-md w-full">
+          <CardContent className="p-8 text-center">
+            <div className="text-orange-600 text-4xl mb-4">⚠️</div>
+            <h2 className="text-lg font-bold text-gray-900 mb-2">Restaurante não vinculado</h2>
+            <p className="text-gray-600 mb-4">
+              Seu usuário não está vinculado a nenhum restaurante. Entre em contato com o administrador.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return (
@@ -105,6 +214,7 @@ export const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
         <div className="flex flex-col items-center gap-4">
           <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
           <p className="text-gray-600">Carregando dados do dashboard...</p>
+          <p className="text-sm text-gray-500">Restaurante ID: {user.restaurantId}</p>
         </div>
       </div>
     );
@@ -133,9 +243,19 @@ export const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
           <p className="text-gray-600 mt-1">Visão geral do restaurante</p>
+          <p className="text-xs text-gray-500 mt-1">
+            📍 Restaurante ID: {user?.restaurantId} | 📦 {orders.length} pedidos carregados | 🍕 {products.length} produtos
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={loadDashboardData}>
-          Atualizar
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+          {isRefreshing ? 'Atualizando...' : 'Atualizar'}
         </Button>
       </div>
 
@@ -166,22 +286,37 @@ export const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Produtos Mais Vendidos
+            Produtos Mais Vendidos Hoje
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {stats.topSellingProducts.map((product, index) => (
-              <div key={product.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
-                <div className="font-bold text-gray-600 w-6">{index + 1}º</div>
-                <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded" />
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">{product.name}</p>
-                  <p className="text-sm text-gray-600">{product.salesCount} vendas</p>
+          {stats.topSellingProducts.length > 0 && stats.topSellingProducts[0].salesCount > 0 ? (
+            <div className="space-y-3">
+              {stats.topSellingProducts.map((product, index) => (
+                <div key={product.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
+                  <div className="font-bold text-gray-600 w-6">{index + 1}º</div>
+                  {product.image && (
+                    <img 
+                      src={product.image} 
+                      alt={product.name} 
+                      className="w-12 h-12 object-cover rounded" 
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100?text=Sem+Imagem';
+                      }}
+                    />
+                  )}
+                  <div className="flex-1">
+                    <p className="font-semibold text-gray-900">{product.name}</p>
+                    <p className="text-sm text-gray-600">{product.salesCount} {product.salesCount === 1 ? 'venda' : 'vendas'}</p>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-4 text-center text-gray-500">
+              <p>Nenhum produto vendido hoje</p>
+            </div>
+          )}
         </CardContent>
       </Card>
 
@@ -189,34 +324,57 @@ export const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
       <Card>
         <CardHeader>
           <div className="flex items-center justify-between">
-            <CardTitle>Pedidos Recentes</CardTitle>
+            <CardTitle>Pedidos Recentes (Hoje)</CardTitle>
             <Button variant="outline" size="sm" onClick={() => onNavigate('orders')}>
               Ver Todos
             </Button>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            {stats.recentOrders.slice(0, 5).map((order) => (
-              <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-semibold text-gray-900">Pedido #{order.id}</p>
-                  <p className="text-sm text-gray-600">{order.customerName}</p>
-                </div>
-                <div className="text-right mr-4">
-                  <p className="font-semibold text-orange-600">R$ {typeof order.total === 'number' ? order.total.toFixed(2) : '0.00'}</p>
-                  <p className="text-xs text-gray-500">{new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
-                </div>
-                <Badge className={
-                  order.status === 'delivered' ? 'bg-green-500' :
-                  order.status === 'on_the_way' ? 'bg-purple-500' :
-                  order.status === 'preparing' ? 'bg-yellow-500' : 'bg-blue-500'
-                }>
-                  {order.status}
-                </Badge>
-              </div>
-            ))}
-          </div>
+          {stats.recentOrders.length > 0 ? (
+            <div className="space-y-3">
+              {stats.recentOrders.slice(0, 5).map((order) => {
+                const orderTotal = typeof order.total === 'number' ? order.total : 0;
+                const orderTime = order.createdAt ? new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
+                
+                return (
+                  <div key={order.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-1">
+                      <p className="font-semibold text-gray-900">Pedido #{order.id}</p>
+                      <p className="text-sm text-gray-600">{order.customerName || `Cliente ${order.customerId}`}</p>
+                      {order.items && order.items.length > 0 && (
+                        <p className="text-xs text-gray-500">{order.items.length} {order.items.length === 1 ? 'item' : 'itens'}</p>
+                      )}
+                    </div>
+                    <div className="text-right mr-4">
+                      <p className="font-semibold text-orange-600">R$ {orderTotal.toFixed(2)}</p>
+                      <p className="text-xs text-gray-500">{orderTime}</p>
+                    </div>
+                    <Badge className={
+                      order.status === 'delivered' ? 'bg-green-500' :
+                      order.status === 'on_the_way' ? 'bg-purple-500' :
+                      order.status === 'preparing' ? 'bg-yellow-500' :
+                      order.status === 'pending' ? 'bg-blue-500' :
+                      order.status === 'confirmed' ? 'bg-cyan-500' :
+                      'bg-gray-500'
+                    }>
+                      {order.status === 'delivered' ? 'Entregue' :
+                       order.status === 'preparing' ? 'Preparando' :
+                       order.status === 'pending' ? 'Pendente' :
+                       order.status === 'confirmed' ? 'Confirmado' :
+                       order.status === 'on_the_way' ? 'A caminho' :
+                       order.status}
+                    </Badge>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="p-4 text-center text-gray-500">
+              <p>Nenhum pedido registrado hoje</p>
+              <p className="text-xs mt-1">Os pedidos do banco de dados aparecerão aqui</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

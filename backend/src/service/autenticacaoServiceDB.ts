@@ -158,6 +158,7 @@ export async function fazerLogin(email: string, password: string): Promise<Login
     if (usuarioJSON) {
       console.log(`[LOGIN] Usuário admin/funcionário encontrado: ${usuarioJSON.name}`);
       console.log(`[LOGIN] Hash da senha no JSON: ${usuarioJSON.password.substring(0, 20)}...`);
+      console.log(`[LOGIN] Restaurant ID: ${usuarioJSON.restaurantId || 'N/A'}`);
 
       const senhaValida = bcrypt.compareSync(password, usuarioJSON.password);
       console.log(`[LOGIN] Senha válida: ${senhaValida}`);
@@ -166,14 +167,22 @@ export async function fazerLogin(email: string, password: string): Promise<Login
         throw new Error("Credenciais inválidas");
       }
 
-      // Gerar token JWT
-      const token = jwt.sign(
-        { id: usuarioJSON.id, email: usuarioJSON.email, role: usuarioJSON.role },
-        JWT_SECRET,
-        { expiresIn: "7d" }
-      );
+      // Gerar token JWT incluindo restaurantId se existir
+      const tokenPayload: any = { 
+        id: usuarioJSON.id, 
+        email: usuarioJSON.email, 
+        role: usuarioJSON.role 
+      };
+      
+      if (usuarioJSON.restaurantId) {
+        tokenPayload.restaurantId = usuarioJSON.restaurantId;
+      }
+
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: "7d" });
 
       const { password: _, ...usuarioSemSenha } = usuarioJSON;
+
+      console.log(`[LOGIN] Usuário retornado:`, { ...usuarioSemSenha });
 
       return {
         token,
@@ -240,6 +249,21 @@ export async function fazerLogin(email: string, password: string): Promise<Login
  * Busca um usuário por ID
  */
 export async function buscarUsuarioPorId(id: string): Promise<Omit<Usuario, "password"> | undefined> {
+  // Primeiro, verificar no arquivo JSON (admin e funcionários)
+  try {
+    const usuarios = lerJSON(caminhoUsuarios);
+    const usuarioJSON = usuarios.find((u: any) => u.id === id && u.isActive);
+
+    if (usuarioJSON) {
+      const { password: _, ...usuarioSemSenha } = usuarioJSON;
+      console.log(`[BUSCAR] Usuário encontrado no JSON:`, usuarioSemSenha);
+      return usuarioSemSenha;
+    }
+  } catch (error) {
+    console.log(`[BUSCAR] Erro ao verificar arquivo JSON: ${error}`);
+  }
+
+  // Se não encontrou no JSON, buscar no banco (clientes)
   const connection = await pool.getConnection();
 
   try {

@@ -9,9 +9,12 @@ import {
 
 const router = express.Router();
 
+// Rotas estáticas DEVEM vir antes das rotas com parâmetros dinâmicos
 router.get("/", getPedidos);
-router.get("/:id", getPedidoById);
 router.post("/", criarPedido);
+
+// Rotas com parâmetros dinâmicos vêm por último
+router.get("/:id", getPedidoById);
 router.patch("/:id/status", atualizarStatusPedido);
 router.put("/:id", atualizarPedido);
 
