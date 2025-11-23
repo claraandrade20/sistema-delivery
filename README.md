@@ -287,14 +287,245 @@ npm run lint
 ## 👨‍💻 Contribuição
 
 1. Faça um fork do repositório
-2. Crie uma branch: `git checkout -b feat/minha-feature`
-3. Commit suas mudanças: `git commit -am 'Add minha feature'`
-4. Push para a branch: `git push origin feat/minha-feature`
-5. Abra um Pull Request
+# Sistema de Delivery
+
+Projeto full-stack para fins acadêmicos: frontend em React + Vite e backend em Node.js + Express (TypeScript). Fornece funcionalidades básicas de um sistema de delivery (autenticação, CRUD de produtos e pedidos, roles de usuário).
 
 ---
 
-## 📄 Licença
+## 🧭 Visão rápida
+- Frontend: React + Vite + TypeScript
+- Backend: Node.js + Express + TypeScript
+- Autenticação: JWT + bcrypt
+- Persistência: arquivos JSON (desenvolvimento)
 
-Este projeto é de uso acadêmico.
+---
+
+## 📁 Estrutura principal
+
+- `backend/` — API, lógica do servidor e dados de desenvolvimento
+- `frontend/` — aplicação web (Vite + React)
+- `README.md` — este arquivo
+
+---
+
+## Requisitos
+
+- Node.js 16+ (recomenda-se 18+)
+- npm
+
+---
+
+## Como rodar (rápido)
+
+Abra dois terminais (um para backend, outro para frontend).
+
+Backend (PowerShell):
+```powershell
+cd backend
+npm install
+npm run migrate   # (se existir) inicializa dados/migrations
+npm run dev       # inicia em modo desenvolvimento
+```
+
+Frontend (PowerShell):
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+URLs padrão:
+- Backend: `http://localhost:3000`
+- Frontend: `http://localhost:5173` (Vite)
+
+---
+
+## Scripts úteis
+
+- Backend:
+  - `npm run dev` — inicia servidor em modo dev (watch)
+  - `npm run migrate` — migra/inicializa dados (conforme `backend/scripts`)
+  - `npm test` — executa testes (se existir)
+
+- Frontend:
+  - `npm run dev` — inicia Vite
+  - `npm run build` — gera build de produção
+  - `npm run preview` — serve build localmente
+
+---
+
+## Testes e dados de desenvolvimento
+
+- Dados de exemplo ficam em `backend/src/data/` (`usuarios.json`, `produtos.json`, `pedidos.json`, `cupons.json`).
+- Para rodar testes do backend (se houver):
+```powershell
+cd backend
+npm test
+```
+
+---
+
+## Variáveis de ambiente
+
+- Backend (`backend/.env`):
+```
+PORT=3000
+JWT_SECRET=sua_chave_secreta_aqui
+```
+
+- Frontend (`frontend/.env`):
+```
+VITE_API_URL=http://localhost:3000/api
+```
+
+---
+
+## Endpoints principais (base)
+
+Base: `http://localhost:3000/api`
+
+- `POST /api/auth/register` — registrar
+- `POST /api/auth/login` — login (retorna JWT)
+- `GET /api/produtos` — listar produtos
+- `POST /api/pedidos` — criar pedido
+
+Consulte as rotas em `backend/src/routes` para a lista completa.
+
+---
+
+## Boas práticas / próximos passos sugeridos
+
+- Mudar para banco relacional (Postgres/MySQL) em produção
+- Adicionar validação de entrada (Zod/Joi)
+- Documentar API com OpenAPI/Swagger
+- Escrever testes automatizados (Jest + Supertest)
+
+---
+
+## Contribuição
+
+1. Fork
+2. `git checkout -b feat/minha-feature`
+3. Commit e push
+4. Abra Pull Request
+
+---
+
+
+---
+
+**Detalhamento Técnico (comandos & exemplos)**
+
+- **Scripts do backend** (conforme `backend/package.json`):
+  - `npm run dev` — inicia em modo desenvolvimento com `ts-node-dev` (watch / hot reload)
+  - `npm run build` — compila TypeScript (`tsc`) para `dist/`
+  - `npm start` — executa `node dist/server.js` (após build)
+  - `npm run lint` — roda `eslint` sobre os arquivos TypeScript
+  - `npm run migrate` — executa `ts-node src/scripts/initDatabase.ts` (cria tabelas MySQL e popula a partir dos JSONs em `src/data/`)
+  - `npm run add-test-product` — executa `src/scripts/addTestProduct.ts` (insere produto exemplo no MySQL)
+  - `npm run add-test-category` — executa `src/scripts/addTestCategory.ts` (insere categoria exemplo)
+
+- **Scripts do frontend** (conforme `frontend/package.json`):
+  - `npm run dev` — inicia Vite (desenvolvimento)
+  - `npm run build` — gera build de produção
+
+- **Variáveis de ambiente recomendadas**
+  - Backend (`backend/.env`):
+    ```
+    PORT=3000
+    JWT_SECRET=sua_chave_secreta_aqui
+    DB_HOST=localhost
+    DB_PORT=3306
+    DB_USER=root
+    DB_PASSWORD=1234
+    DB_NAME=sistema_delivery
+    ```
+    > Observação: `DB_*` são lidas em `src/config/database.ts` — ajuste conforme seu MySQL.
+
+  - Frontend (`frontend/.env`):
+    ```
+    VITE_API_URL=http://localhost:3000/api
+    ```
+
+- **Como inicializar banco (migração + seed)**
+  1. Certifique-se de que o MySQL está rodando e as variáveis `DB_*` estão corretas.
+  2. No PowerShell (pasta `backend`):
+     ```powershell
+     cd backend
+     npm install
+     npm run migrate
+     ```
+     - O script `migrate` cria todas as tabelas e popula dados a partir dos JSONs em `backend/src/data`.
+  3. (Opcional) Adicionar produto/categoria de demonstração:
+     ```powershell
+     npm run add-test-product
+     npm run add-test-category
+     ```
+
+- **Exemplos de requisições (curl)**
+  - Registrar usuário:
+    ```bash
+    curl -X POST http://localhost:3000/api/auth/register \
+      -H "Content-Type: application/json" \
+      -d '{"name":"Ana Silva","email":"ana@example.com","password":"senha123","phone":"85990000000","role":"client"}'
+    ```
+
+  - Login (recebe token JWT):
+    ```bash
+    curl -X POST http://localhost:3000/api/auth/login \
+      -H "Content-Type: application/json" \
+      -d '{"email":"admin@deliverysystem.com","password":"qualquer valor"}'
+    ```
+
+  - Criar pedido (exemplo mínimo):
+    ```bash
+    curl -X POST http://localhost:3000/api/pedidos \
+      -H "Content-Type: application/json" \
+      -d '{
+        "customerId":"1",
+        "customerName":"João Silva",
+        "customerPhone":"85988888888",
+        "restaurantId":1,
+        "restaurantName":"Pizzaria Bella Napoli",
+        "items":[{"productId":"1","productName":"Pizza Margherita","quantity":1,"subtotal":29.9}],
+        "deliveryAddress":"Rua Exemplo, 123",
+        "paymentMethod":"card",
+        "subtotal":29.9,
+        "deliveryFee":8.9,
+        "discount":0,
+        "total":38.8
+      }'
+    ```
+
+  - Atualizar status do pedido (API exige status válidos):
+    ```bash
+    curl -X PATCH http://localhost:3000/api/pedidos/1/status \
+      -H "Content-Type: application/json" \
+      -d '{"status":"preparing"}'
+    ```
+
+- **Debug / logs**
+  - O backend imprime requisições no console (`console.log('${req.method} ${req.path}')`).
+  - O script de migração e os scripts de seed escrevem mensagens detalhadas no console para acompanhamento.
+
+- **Executando lint e testes**
+  - Lint (backend):
+    ```powershell
+    cd backend
+    npm run lint
+    ```
+  - Testes (se existirem):
+    ```powershell
+    cd backend
+    npm test
+    ```
+
+---
+
+Se quiser, eu posso:
+- ajustar mais exemplos de payloads para endpoints específicos (produtos, categorias, clientes)
+- criar um arquivo `backend/.env.example` e commitar
+- commitar as mudanças no `README.md` e abrir um PR automaticamente
+
 
