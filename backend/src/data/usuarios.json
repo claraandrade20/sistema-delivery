@@ -10,16 +10,6 @@
     "isActive": true
   },
   {
-    "id": "2",
-    "name": "Maria Santos",
-    "email": "maria@gmail.com",
-    "password": "$2a$10$qMv2dd/d0UAwAfwLdQQnGOILGdi2wvu7KbR6BPgp6EwvuLzvcYRxG",
-    "phone": "(85) 91234-5678",
-    "role": "client",
-    "createdAt": "2024-02-20T14:20:00Z",
-    "isActive": true
-  },
-  {
     "id": "3",
     "name": "Carlos Souza",
     "email": "carlos@restaurant.com",
@@ -34,7 +24,7 @@
     "id": "4",
     "name": "Roberto Admin",
     "email": "admin@deliverysystem.com",
-    "password": "$2a$10$2BVESf9Md/k32fTyQfF4nOZeXDjgDAobwSyalU/3ofTsjO5xUWMaW",
+    "password": "$2a$10$CtRbo5ZdXidrbw7v9W.zUuYwZdTzg43FVkX/qKfKvSQ.VJmlHw5VS",
     "phone": "(85) 77777-6666",
     "role": "admin",
     "createdAt": "2023-01-01T00:00:00Z",
@@ -51,44 +41,15 @@
     "isActive": true
   },
   {
-    "id": "6",
-    "name": "Rafael Lopes",
-    "email": "rafaellopes250106@gmail.com",
-    "password": "$2a$10$Tdc6XPD4G4Tv1Psz.f1O/.p42UU.2OnkTUP1WR1utW8WjxKa/1NSq",
-    "phone": "(85) 99212-7498",
-    "role": "client",
-    "createdAt": "2025-11-21T11:26:16.601Z",
-    "isActive": true
-  },
-  {
-    "id": "7",
-    "name": "rafael santos",
-    "email": "rafaellopes25016@gmail.com",
-    "password": "$2a$10$vjH6oocj769YPmBHOHn6GObVg0DeYQLZsjOGzrCLwUR5i/QZM7wAa",
-    "phone": "(85) 99212-7498",
-    "role": "client",
-    "createdAt": "2025-11-21T11:34:57.316Z",
-    "isActive": true
-  },
-  {
-    "id": "8",
-    "name": "Lopes Silva",
-    "email": "rafaellopes2501@gmail.com",
-    "password": "$2a$10$aTd2bWdntuSYOsFAc5BYN.N5FFHsrWRthLr7CVu9LFuPKUxC8HyJC",
-    "phone": "(85) 99999-9999",
-    "role": "client",
-    "createdAt": "2025-11-21T11:42:36.435Z",
-    "isActive": true
-  },
-  {
     "id": "9",
     "name": "Pedro Caliope",
     "email": "pedrocaliope@gmail.com",
-    "password": "$2a$10$VNEit.ET4A1MJptPJd/Ej.quYDLbTd64z3FnCjg5tBUFTjNiBq29q",
+    "password": "$2a$10$kjGTBSf0PKQ46LN6b1zk1.TuG2qS4jNs7rqXJeDurNn1q8wu8hWuu",
     "phone": "(85) 98745-6123",
-    "role": "client",
+    "role": "employee",
     "createdAt": "2025-11-23T02:33:33.499Z",
-    "isActive": true
+    "isActive": true,
+    "restaurantId": "1"
   },
   {
     "id": "client-1763871381431",

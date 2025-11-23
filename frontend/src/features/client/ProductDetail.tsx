@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@shared/ui/card';
 import { Button } from '@shared/ui/button';
 import { Badge } from '@shared/ui/badge';
@@ -6,10 +6,10 @@ import { RadioGroup, RadioGroupItem } from '@shared/ui/radio-group';
 import { Checkbox } from '@shared/ui/checkbox';
 import { Label } from '@shared/ui/label';
 import { ImageWithFallback } from '@shared/components/figma/ImageWithFallback';
-import { mockProducts } from '@shared/data/mockData';
+import { produtosAPI } from '@shared/services/api';
 import { useCart } from '@shared/context/CartContext';
 import { toast } from 'sonner';
-import { ArrowLeft, Star, Clock, Minus, Plus, ShoppingCart } from 'lucide-react';
+import { ArrowLeft, Star, Clock, Minus, Plus, ShoppingCart, Loader2 } from 'lucide-react';
 
 interface ProductDetailProps {
   productId: string;
@@ -17,12 +17,73 @@ interface ProductDetailProps {
 }
 
 export const ProductDetail = ({ productId, onNavigate }: ProductDetailProps) => {
-  const product = mockProducts.find(p => p.id === productId);
+  const [product, setProduct] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const { addToCart } = useCart();
 
-  const [selectedVariation, setSelectedVariation] = useState(product?.variations[0].id || '');
+  const [selectedVariation, setSelectedVariation] = useState('');
   const [selectedAddons, setSelectedAddons] = useState<string[]>([]);
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    loadProduct();
+  }, [productId]);
+
+  const loadProduct = async () => {
+    try {
+      setLoading(true);
+      const data = await produtosAPI.buscarPorId(productId);
+      
+      // Mapear produto do banco para o formato esperado
+      const mappedProduct = {
+        id: data.id,
+        name: data.nome,
+        description: data.descricao,
+        image: data.imagem,
+        categoryId: data.id_categoria,
+        restaurantId: data.id_restaurantes,
+        isActive: data.ativo || data.disponivel,
+        isFeatured: data.destaque,
+        rating: data.avaliacao,
+        reviewsCount: data.total_avaliacoes,
+        preparationTime: data.tempo_preparo,
+        stockQuantity: data.quantidade_estoque,
+        variations: data.variacoes?.map((v: any) => ({
+          id: v.id.toString(),
+          name: v.nome,
+          price: parseFloat(v.preco) || 0,
+        })) || [],
+        addons: data.adicionais?.map((a: any) => ({
+          id: a.id.toString(),
+          name: a.nome,
+          price: parseFloat(a.preco) || 0,
+        })) || [],
+      };
+
+      setProduct(mappedProduct);
+      
+      // Definir primeira variação como padrão
+      if (mappedProduct.variations.length > 0) {
+        setSelectedVariation(mappedProduct.variations[0].id);
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao carregar produto');
+      console.error(error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="py-16 text-center flex flex-col items-center gap-4">
+          <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+          <p className="text-gray-500">Carregando produto...</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!product) {
     return (

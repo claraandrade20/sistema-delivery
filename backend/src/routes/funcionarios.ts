@@ -4,9 +4,10 @@ import { autenticar, autorizarRoles } from "../middleware/middlewareAutenticacao
 
 const router = Router();
 
-// Todas as rotas requerem autenticação de admin
+// Todas as rotas requerem autenticação
 router.use(autenticar);
-router.use(autorizarRoles("admin"));
+// Permitir admin ou employee (gerentes de restaurante)
+router.use(autorizarRoles("admin", "employee"));
 
 // Listar todos os funcionários
 router.get("/", funcionariosController.listarFuncionarios);

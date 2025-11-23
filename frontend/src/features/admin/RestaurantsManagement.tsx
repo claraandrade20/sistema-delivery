@@ -7,7 +7,7 @@ import { Input } from '@shared/ui/input';
 import { Label } from '@shared/ui/label';
 import { restaurantesAPI } from '@shared/services/api';
 import { toast } from 'sonner';
-import { Plus, Edit, Eye, EyeOff, Star, Loader2, Trash2 } from 'lucide-react';
+import { Edit, Eye, EyeOff, Star, Loader2, Trash2, Package, Tag, BarChart3 } from 'lucide-react';
 
 interface Restaurant {
   id: number;
@@ -29,6 +29,13 @@ export const RestaurantsManagement = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editFormData, setEditFormData] = useState<Restaurant | null>(null);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [expandedRestaurantId, setExpandedRestaurantId] = useState<number | null>(null);
+  const [restaurantDetails, setRestaurantDetails] = useState<{
+    produtos: any[];
+    categorias: any[];
+    estatisticas: any;
+  } | null>(null);
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const [newRestaurant, setNewRestaurant] = useState({
     nome: '',
     descricao: '',
@@ -125,6 +132,32 @@ export const RestaurantsManagement = () => {
     }
   };
 
+  const toggleRestaurantDetails = async (id: number) => {
+    if (expandedRestaurantId === id) {
+      setExpandedRestaurantId(null);
+      setRestaurantDetails(null);
+      return;
+    }
+
+    setExpandedRestaurantId(id);
+    setLoadingDetails(true);
+
+    try {
+      const [produtos, categorias, estatisticas] = await Promise.all([
+        restaurantesAPI.listarProdutos(id.toString()),
+        restaurantesAPI.listarCategorias(id.toString()),
+        restaurantesAPI.obterEstatisticas(id.toString()),
+      ]);
+
+      setRestaurantDetails({ produtos, categorias, estatisticas });
+    } catch (error: any) {
+      toast.error('Erro ao carregar detalhes do restaurante');
+      setExpandedRestaurantId(null);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -137,95 +170,7 @@ export const RestaurantsManagement = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold text-gray-900">Gerenciar Restaurantes</h1>
-        <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="bg-purple-600 hover:bg-purple-700">
-              <Plus className="h-4 w-4 mr-2" />
-              Novo Restaurante
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Cadastrar Restaurante</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label>Nome do Restaurante</Label>
-                <Input 
-                  placeholder="Ex: Pizzaria Bella Napoli"
-                  value={newRestaurant.nome}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, nome: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Descrição</Label>
-                <Input 
-                  placeholder="Descrição do restaurante"
-                  value={newRestaurant.descricao}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, descricao: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Telefone</Label>
-                  <Input 
-                    placeholder="(85) 3456-7890"
-                    value={newRestaurant.telefone}
-                    onChange={(e) => setNewRestaurant({ ...newRestaurant, telefone: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Email</Label>
-                  <Input 
-                    type="email" 
-                    placeholder="contato@restaurante.com"
-                    value={newRestaurant.email}
-                    onChange={(e) => setNewRestaurant({ ...newRestaurant, email: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div>
-                <Label>Endereço</Label>
-                <Input 
-                  placeholder="Rua, número - Bairro, Cidade"
-                  value={newRestaurant.endereco}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, endereco: e.target.value })}
-                />
-              </div>
-              <div>
-                <Label>Imagem URL</Label>
-                <Input 
-                  placeholder="https://exemplo.com/imagem.jpg"
-                  value={newRestaurant.imagem}
-                  onChange={(e) => setNewRestaurant({ ...newRestaurant, imagem: e.target.value })}
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Taxa de Entrega (R$)</Label>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="8.90"
-                    value={newRestaurant.taxa_entrega}
-                    onChange={(e) => setNewRestaurant({ ...newRestaurant, taxa_entrega: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label>Pedido Mínimo (R$)</Label>
-                  <Input 
-                    type="number" 
-                    step="0.01"
-                    placeholder="25.00"
-                    value={newRestaurant.pedido_minimo}
-                    onChange={(e) => setNewRestaurant({ ...newRestaurant, pedido_minimo: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-              </div>
-              <Button className="w-full" onClick={handleCreateRestaurant}>Cadastrar Restaurante</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        {/* Botão de criação removido conforme solicitado */}
       </div>
 
       <div className="grid grid-cols-1 gap-4">
@@ -372,9 +317,152 @@ export const RestaurantsManagement = () => {
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
+                    {/* Botão 'Detalhes' removido conforme solicitado */}
                   </div>
                 </div>
               </div>
+
+              {/* Seção Expandida com Produtos e Categorias */}
+              {expandedRestaurantId === restaurant.id && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  {loadingDetails ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-purple-600" />
+                    </div>
+                  ) : restaurantDetails ? (
+                    <div className="space-y-6">
+                      {/* Estatísticas */}
+                      <div>
+                        <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                          <BarChart3 className="h-5 w-5 text-purple-600" />
+                          Estatísticas
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                          <Card>
+                            <CardContent className="p-4">
+                              <p className="text-sm text-gray-500">Categorias</p>
+                              <p className="text-2xl font-bold text-purple-600">
+                                {restaurantDetails.estatisticas.total_categorias}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="p-4">
+                              <p className="text-sm text-gray-500">Produtos</p>
+                              <p className="text-2xl font-bold text-blue-600">
+                                {restaurantDetails.estatisticas.total_produtos}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="p-4">
+                              <p className="text-sm text-gray-500">Disponíveis</p>
+                              <p className="text-2xl font-bold text-green-600">
+                                {restaurantDetails.estatisticas.produtos_disponiveis}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="p-4">
+                              <p className="text-sm text-gray-500">Pedidos</p>
+                              <p className="text-2xl font-bold text-orange-600">
+                                {restaurantDetails.estatisticas.total_pedidos}
+                              </p>
+                            </CardContent>
+                          </Card>
+                          <Card>
+                            <CardContent className="p-4">
+                              <p className="text-sm text-gray-500">Receita Total</p>
+                              <p className="text-2xl font-bold text-emerald-600">
+                                R$ {restaurantDetails.estatisticas.receita_total.toFixed(2)}
+                              </p>
+                            </CardContent>
+                          </Card>
+                        </div>
+                      </div>
+
+                      {/* Categorias */}
+                      <div>
+                        <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                          <Tag className="h-5 w-5 text-purple-600" />
+                          Categorias ({restaurantDetails.categorias.length})
+                        </h4>
+                        {restaurantDetails.categorias.length > 0 ? (
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                            {restaurantDetails.categorias.map((categoria: any) => (
+                              <Card key={categoria.id} className="hover:shadow-md transition-shadow">
+                                <CardContent className="p-4">
+                                  <div className="flex items-center justify-between">
+                                    <div className="flex-1">
+                                      <p className="font-medium text-gray-900">{categoria.nome}</p>
+                                      <p className="text-sm text-gray-500">
+                                        {categoria.total_produtos} produto(s)
+                                      </p>
+                                    </div>
+                                    <Badge className={categoria.ativo ? 'bg-green-500' : 'bg-gray-400'}>
+                                      {categoria.ativo ? 'Ativa' : 'Inativa'}
+                                    </Badge>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-center py-4">Nenhuma categoria cadastrada</p>
+                        )}
+                      </div>
+
+                      {/* Produtos */}
+                      <div>
+                        <h4 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                          <Package className="h-5 w-5 text-purple-600" />
+                          Produtos ({restaurantDetails.produtos.length})
+                        </h4>
+                        {restaurantDetails.produtos.length > 0 ? (
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {restaurantDetails.produtos.slice(0, 6).map((produto: any) => (
+                              <Card key={produto.id} className="hover:shadow-md transition-shadow">
+                                <CardContent className="p-4">
+                                  <div className="flex gap-3">
+                                    {produto.imagem && (
+                                      <img 
+                                        src={produto.imagem} 
+                                        alt={produto.nome} 
+                                        className="w-16 h-16 object-cover rounded"
+                                      />
+                                    )}
+                                    <div className="flex-1">
+                                      <div className="flex items-start justify-between">
+                                        <div>
+                                          <p className="font-medium text-gray-900">{produto.nome}</p>
+                                          <p className="text-sm text-gray-500">{produto.categoria_nome}</p>
+                                        </div>
+                                        <Badge className={produto.disponivel ? 'bg-green-500' : 'bg-red-500'}>
+                                          {produto.disponivel ? 'Disponível' : 'Indisponível'}
+                                        </Badge>
+                                      </div>
+                                      <p className="text-lg font-bold text-purple-600 mt-1">
+                                        R$ {produto.preco.toFixed(2)}
+                                      </p>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-gray-500 text-center py-4">Nenhum produto cadastrado</p>
+                        )}
+                        {restaurantDetails.produtos.length > 6 && (
+                          <p className="text-center text-sm text-gray-500 mt-3">
+                            ... e mais {restaurantDetails.produtos.length - 6} produto(s)
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ) : null}
+                </div>
+              )}
             </CardContent>
           </Card>
         ))}

@@ -412,6 +412,23 @@ export const restaurantesAPI = {
       method: 'DELETE',
     });
   },
+
+  listarProdutos: async (id: string, params?: { categoriaId?: string; disponivel?: boolean }) => {
+    const query = new URLSearchParams();
+    if (params?.categoriaId) query.append('categoriaId', params.categoriaId);
+    if (params?.disponivel !== undefined) query.append('disponivel', params.disponivel.toString());
+    const queryString = query.toString() ? `?${query.toString()}` : '';
+    return fetchAPI(`/restaurantes/${id}/produtos${queryString}`);
+  },
+
+  listarCategorias: async (id: string, ativo?: boolean) => {
+    const query = ativo !== undefined ? `?ativo=${ativo}` : '';
+    return fetchAPI(`/restaurantes/${id}/categorias${query}`);
+  },
+
+  obterEstatisticas: async (id: string) => {
+    return fetchAPI(`/restaurantes/${id}/estatisticas`);
+  },
 };
 
 export default {

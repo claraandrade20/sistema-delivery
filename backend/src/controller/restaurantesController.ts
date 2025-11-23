@@ -306,3 +306,197 @@ export const deletarRestaurante = async (req: Request, res: Response) => {
     res.status(500).json({ erro: "Erro ao deletar restaurante" });
   }
 };
+
+// Listar produtos de um restaurante
+export const listarProdutosDoRestaurante = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+    const { categoriaId, disponivel } = req.query;
+
+    // Verificar se o restaurante existe
+    const [restaurantes] = await pool.execute<RowDataPacket[]>(
+      "SELECT id FROM restaurantes WHERE id = ?",
+      [id]
+    );
+
+    if (restaurantes.length === 0) {
+      return res.status(404).json({ erro: "Restaurante não encontrado" });
+    }
+
+    let query = `
+      SELECT 
+        p.id,
+        p.nome,
+        p.descricao,
+        p.preco,
+        p.imagem,
+        p.disponivel,
+        p.id_categoria,
+        c.nome as categoria_nome,
+        p.criado_em,
+        p.atualizado_em
+      FROM produtos p
+      LEFT JOIN categorias c ON p.id_categoria = c.id
+      WHERE p.id_restaurantes = ?
+    `;
+
+    const params: any[] = [id];
+
+    if (categoriaId) {
+      query += " AND p.id_categoria = ?";
+      params.push(categoriaId);
+    }
+
+    if (disponivel !== undefined) {
+      query += " AND p.disponivel = ?";
+      params.push(disponivel === "true" || disponivel === "1");
+    }
+
+    query += " ORDER BY c.nome, p.nome";
+
+    const [produtos] = await pool.execute<RowDataPacket[]>(query, params);
+
+    // Converter valores numéricos
+    const produtosFormatados = produtos.map((p: any) => ({
+      ...p,
+      preco: parseFloat(p.preco) || 0,
+      disponivel: Boolean(p.disponivel),
+    }));
+
+    res.json(produtosFormatados);
+  } catch (erro) {
+    console.error("Erro ao listar produtos do restaurante:", erro);
+    res.status(500).json({ erro: "Erro ao buscar produtos" });
+  }
+};
+
+// Listar categorias de um restaurante
+export const listarCategoriasDoRestaurante = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+    const { ativo } = req.query;
+
+    // Verificar se o restaurante existe
+    const [restaurantes] = await pool.execute<RowDataPacket[]>(
+      "SELECT id FROM restaurantes WHERE id = ?",
+      [id]
+    );
+
+    if (restaurantes.length === 0) {
+      return res.status(404).json({ erro: "Restaurante não encontrado" });
+    }
+
+    let query = `
+      SELECT 
+        c.id,
+        c.nome,
+        c.descricao,
+        c.imagem,
+        c.ativo,
+        c.criado_em,
+        COUNT(p.id) as total_produtos
+      FROM categorias c
+      LEFT JOIN produtos p ON c.id = p.id_categoria AND p.id_restaurantes = c.id_restaurantes
+      WHERE c.id_restaurantes = ?
+    `;
+
+    const params: any[] = [id];
+
+    if (ativo !== undefined) {
+      query += " AND c.ativo = ?";
+      params.push(ativo === "true" || ativo === "1");
+    }
+
+    query += " GROUP BY c.id, c.nome, c.descricao, c.imagem, c.ativo, c.criado_em";
+    query += " ORDER BY c.nome";
+
+    const [categorias] = await pool.execute<RowDataPacket[]>(query, params);
+
+    // Converter valores
+    const categoriasFormatadas = categorias.map((c: any) => ({
+      ...c,
+      ativo: Boolean(c.ativo),
+      total_produtos: parseInt(c.total_produtos) || 0,
+    }));
+
+    res.json(categoriasFormatadas);
+  } catch (erro) {
+    console.error("Erro ao listar categorias do restaurante:", erro);
+    res.status(500).json({ erro: "Erro ao buscar categorias" });
+  }
+};
+
+// Obter estatísticas do restaurante
+export const obterEstatisticasRestaurante = async (
+  req: Request,
+  res: Response
+) => {
+  try {
+    const { id } = req.params;
+
+    // Verificar se o restaurante existe
+    const [restaurantes] = await pool.execute<RowDataPacket[]>(
+      "SELECT id, nome FROM restaurantes WHERE id = ?",
+      [id]
+    );
+
+    if (restaurantes.length === 0) {
+      return res.status(404).json({ erro: "Restaurante não encontrado" });
+    }
+
+    // Total de categorias
+    const [categorias] = await pool.execute<RowDataPacket[]>(
+      "SELECT COUNT(*) as total FROM categorias WHERE id_restaurantes = ?",
+      [id]
+    );
+
+    // Total de produtos
+    const [produtos] = await pool.execute<RowDataPacket[]>(
+      "SELECT COUNT(*) as total FROM produtos WHERE id_restaurantes = ?",
+      [id]
+    );
+
+    // Produtos disponíveis
+    const [produtosDisponiveis] = await pool.execute<RowDataPacket[]>(
+      "SELECT COUNT(*) as total FROM produtos WHERE id_restaurantes = ? AND disponivel = true",
+      [id]
+    );
+
+    // Total de pedidos
+    const [pedidos] = await pool.execute<RowDataPacket[]>(
+      "SELECT COUNT(*) as total FROM pedidos WHERE id_restaurantes = ?",
+      [id]
+    );
+
+    // Receita total
+    const [receita] = await pool.execute<RowDataPacket[]>(
+      `SELECT COALESCE(SUM(valor_total), 0) as total 
+       FROM pedidos 
+       WHERE id_restaurantes = ? AND status IN ('concluido', 'entregue')`,
+      [id]
+    );
+
+    const estatisticas = {
+      restaurante: {
+        id: restaurantes[0].id,
+        nome: restaurantes[0].nome,
+      },
+      total_categorias: parseInt(categorias[0].total) || 0,
+      total_produtos: parseInt(produtos[0].total) || 0,
+      produtos_disponiveis: parseInt(produtosDisponiveis[0].total) || 0,
+      total_pedidos: parseInt(pedidos[0].total) || 0,
+      receita_total: parseFloat(receita[0].total) || 0,
+    };
+
+    res.json(estatisticas);
+  } catch (erro) {
+    console.error("Erro ao obter estatísticas do restaurante:", erro);
+    res.status(500).json({ erro: "Erro ao buscar estatísticas" });
+  }
+};

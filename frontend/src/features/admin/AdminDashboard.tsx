@@ -63,7 +63,28 @@ export const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
       const totalCustomers = usersArray.filter((u: any) => u.role === 'client').length;
       const totalEmployees = usersArray.filter((u: any) => u.role === 'employee').length;
 
-      const topSellingProducts = productsArray.slice(0, 5);
+      // Contar vendas por produto através dos pedidos
+      const productSalesMap: { [key: string]: { count: number; product: any } } = {};
+      
+      ordersArray.forEach(order => {
+        if (order.items && Array.isArray(order.items)) {
+          order.items.forEach((item: any) => {
+            const productId = item.produto_id || item.id;
+            if (!productSalesMap[productId]) {
+              productSalesMap[productId] = { count: 0, product: item };
+            }
+            productSalesMap[productId].count += item.quantidade || 1;
+          });
+        }
+      });
+
+      const topSellingProducts = productsArray
+        .map(prod => ({
+          ...prod,
+          salesCount: productSalesMap[prod.id]?.count || 0,
+        }))
+        .sort((a, b) => b.salesCount - a.salesCount)
+        .slice(0, 5);
 
       setStats({
         totalRestaurants: 1,
@@ -190,10 +211,19 @@ export const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
               stats.topSellingProducts.map((product, index) => (
                 <div key={product.id} className="flex items-center gap-4 p-3 bg-gray-50 rounded-lg">
                   <div className="font-bold text-gray-600 w-6">{index + 1}º</div>
-                  <img src={product.image} alt={product.name} className="w-12 h-12 object-cover rounded" />
+                  {(product.imagem || product.image) && (
+                    <img 
+                      src={product.imagem || product.image} 
+                      alt={product.nome || product.name} 
+                      className="w-12 h-12 object-cover rounded"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = 'https://via.placeholder.com/50?text=Sem+Imagem';
+                      }}
+                    />
+                  )}
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">{product.name}</p>
-                    <p className="text-sm text-gray-600">{product.salesCount} vendas</p>
+                    <p className="font-semibold text-gray-900">{product.nome || product.name}</p>
+                    <p className="text-sm text-gray-600">{product.salesCount || 0} {product.salesCount === 1 ? 'venda' : 'vendas'}</p>
                   </div>
                 </div>
               ))

@@ -156,7 +156,7 @@ export async function fazerLogin(email: string, password: string): Promise<Login
     const usuarioJSON = usuarios.find((u: any) => u.email === emailNormalizado && u.isActive && (u.role === 'admin' || u.role === 'employee'));
 
     if (usuarioJSON) {
-      console.log(`[LOGIN] Usuário admin/funcionário encontrado: ${usuarioJSON.name}`);
+      console.log(`[LOGIN] Usuário admin/funcionário encontrado no JSON: ${usuarioJSON.name}`);
       console.log(`[LOGIN] Hash da senha no JSON: ${usuarioJSON.password.substring(0, 20)}...`);
       console.log(`[LOGIN] Restaurant ID: ${usuarioJSON.restaurantId || 'N/A'}`);
 
@@ -193,10 +193,58 @@ export async function fazerLogin(email: string, password: string): Promise<Login
     console.log(`[LOGIN] Erro ao verificar arquivo JSON: ${error}`);
   }
 
-  // Se não encontrou no JSON, procurar na tabela clientes (clientes do app)
+  // Se não encontrou no JSON, buscar na tabela usuarios (funcionários/admin criados via API)
   const connection = await pool.getConnection();
 
   try {
+    const [usuarios] = await connection.query<any[]>(
+      "SELECT id, nome, email, senha, telefone, funcao, id_restaurantes, ativo FROM usuarios WHERE LOWER(email) = ? AND ativo = true AND funcao IN ('funcionario', 'admin')",
+      [emailNormalizado]
+    );
+
+    if (usuarios.length > 0) {
+      const usuario = usuarios[0];
+
+      console.log(`[LOGIN] Funcionário/Admin encontrado no DB: ${usuario.nome}`);
+      console.log(`[LOGIN] Hash da senha no DB: ${usuario.senha.substring(0, 20)}...`);
+
+      const senhaValida = bcrypt.compareSync(password, usuario.senha);
+
+      console.log(`[LOGIN] Senha válida: ${senhaValida}`);
+
+      if (!senhaValida) {
+        throw new Error("Credenciais inválidas");
+      }
+
+      // Gerar token JWT
+      const tokenPayload: any = { 
+        id: usuario.id.toString(), 
+        email: usuario.email, 
+        role: usuario.funcao === 'funcionario' ? 'employee' : 'admin'
+      };
+
+      if (usuario.id_restaurantes) {
+        tokenPayload.restaurantId = usuario.id_restaurantes.toString();
+      }
+
+      const token = jwt.sign(tokenPayload, JWT_SECRET, { expiresIn: "7d" });
+
+      return {
+        token,
+        user: {
+          id: usuario.id.toString(),
+          name: usuario.nome,
+          email: usuario.email,
+          phone: usuario.telefone,
+          role: usuario.funcao === 'funcionario' ? ('employee' as const) : ('admin' as const),
+          restaurantId: usuario.id_restaurantes?.toString(),
+          createdAt: new Date().toISOString(),
+          isActive: true,
+        },
+      };
+    }
+
+    // Se não encontrou no usuarios, procurar na tabela clientes (clientes do app)
     const [clientes] = await connection.query<any[]>(
       "SELECT id, nome, email, senha, telefone, ativo FROM clientes WHERE LOWER(email) = ? AND ativo = true",
       [emailNormalizado]
@@ -263,10 +311,32 @@ export async function buscarUsuarioPorId(id: string): Promise<Omit<Usuario, "pas
     console.log(`[BUSCAR] Erro ao verificar arquivo JSON: ${error}`);
   }
 
-  // Se não encontrou no JSON, buscar no banco (clientes)
+  // Se não encontrou no JSON, buscar na tabela usuarios (funcionários/admin)
   const connection = await pool.getConnection();
 
   try {
+    const [usuarios] = await connection.query<any[]>(
+      "SELECT id, nome, email, telefone, funcao, id_restaurantes, ativo FROM usuarios WHERE id = ?",
+      [id]
+    );
+
+    if (usuarios.length > 0) {
+      const usuario = usuarios[0];
+      console.log(`[BUSCAR] Usuário encontrado na tabela usuarios:`, usuario);
+
+      return {
+        id: usuario.id.toString(),
+        name: usuario.nome,
+        email: usuario.email,
+        phone: usuario.telefone,
+        role: usuario.funcao === 'funcionario' ? ('employee' as const) : ('admin' as const),
+        restaurantId: usuario.id_restaurantes?.toString(),
+        createdAt: new Date().toISOString(),
+        isActive: usuario.ativo,
+      };
+    }
+
+    // Se não encontrou em usuarios, buscar na tabela clientes
     const [clientes] = await connection.query<any[]>(
       "SELECT id, nome, email, telefone, ativo FROM clientes WHERE id = ?",
       [id]

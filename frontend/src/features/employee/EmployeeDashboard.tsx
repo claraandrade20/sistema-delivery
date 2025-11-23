@@ -334,7 +334,17 @@ export const EmployeeDashboard = ({ onNavigate }: EmployeeDashboardProps) => {
           {stats.recentOrders.length > 0 ? (
             <div className="space-y-3">
               {stats.recentOrders.slice(0, 5).map((order) => {
-                const orderTotal = typeof order.total === 'number' ? order.total : 0;
+                // Calcular o total somando os subtotais dos itens
+                let orderTotal = typeof order.total === 'number' ? order.total : 0;
+                
+                // Se o total estiver zerado, calcular a partir dos itens
+                if (orderTotal === 0 && order.items && order.items.length > 0) {
+                  orderTotal = order.items.reduce((sum, item) => {
+                    const subtotal = typeof item.subtotal === 'number' ? item.subtotal : parseFloat(String(item.subtotal)) || 0;
+                    return sum + subtotal;
+                  }, 0);
+                }
+                
                 const orderTime = order.createdAt ? new Date(order.createdAt).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : '--:--';
                 
                 return (

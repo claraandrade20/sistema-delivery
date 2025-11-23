@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@shared/ui/card';
 import { Button } from '@shared/ui/button';
 import { Badge } from '@shared/ui/badge';
 import { ImageWithFallback } from '@shared/components/figma/ImageWithFallback';
-import { mockCategories, mockPromotions, getFeaturedProducts, mockRestaurants } from '@shared/data/mockData';
-import { Star, Clock, TrendingUp, ArrowRight } from 'lucide-react';
+import { mockPromotions, mockRestaurants } from '@shared/data/mockData';
+import { produtosAPI, categoriasAPI } from '@shared/services/api';
+import { Star, Clock, TrendingUp, ArrowRight, Loader2 } from 'lucide-react';
 import { Carousel, CarouselContent, CarouselItem, CarouselNext, CarouselPrevious } from '@shared/ui/carousel';
+import { toast } from 'sonner';
 
 // 1. Adicionado onSearch na interface
 interface ClientHomeProps {
@@ -14,10 +16,67 @@ interface ClientHomeProps {
 }
 
 export const ClientHome = ({ onNavigate, onSearch }: ClientHomeProps) => {
+  const [categories, setCategories] = useState<any[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const restaurant = mockRestaurants[0]; // Restaurante principal
-  const categories = mockCategories.filter(c => c.restaurantId === restaurant.id);
-  const featuredProducts = getFeaturedProducts(restaurant.id);
   const promotions = mockPromotions.filter(p => p.restaurantId === restaurant.id && p.isActive);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Carregar categorias
+      const categoriesResponse = await categoriasAPI.listar();
+      const categoriesData = categoriesResponse.success ? categoriesResponse.data : categoriesResponse;
+      const categoriesArray = Array.isArray(categoriesData) ? categoriesData : [];
+      const mappedCategories = categoriesArray
+        .filter((c: any) => c.ativo)
+        .map((c: any) => ({
+          id: c.id.toString(),
+          name: c.nome,
+          description: c.descricao,
+          image: c.imagem || 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c',
+          restaurantId: c.id_restaurantes?.toString() || '1',
+        }));
+      setCategories(mappedCategories);
+
+      // Carregar produtos em destaque
+      const productsData = await produtosAPI.listar();
+      const productsArray = Array.isArray(productsData) ? productsData : [];
+      const mappedProducts = productsArray
+        .filter((p: any) => (p.ativo || p.disponivel) && p.destaque)
+        .map((p: any) => ({
+          id: p.id,
+          name: p.nome,
+          description: p.descricao,
+          image: p.imagem,
+          categoryId: p.id_categoria,
+          restaurantId: p.id_restaurantes,
+          isActive: p.ativo || p.disponivel,
+          isFeatured: p.destaque,
+          rating: p.avaliacao,
+          reviewsCount: p.total_avaliacoes,
+          preparationTime: p.tempo_preparo,
+          variations: p.variacoes?.map((v: any) => ({
+            id: v.id,
+            name: v.nome,
+            price: parseFloat(v.preco) || 0,
+          })) || [],
+        }));
+      setFeaturedProducts(mappedProducts);
+    } catch (error) {
+      console.error('Erro ao carregar dados:', error);
+      toast.error('Erro ao carregar dados da página inicial');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   // 2. Função para lidar com o clique na promoção
   const handlePromoClick = (promo: (typeof mockPromotions)[0]) => {
@@ -72,6 +131,14 @@ export const ClientHome = ({ onNavigate, onSearch }: ClientHomeProps) => {
     // Rola para o topo suavemente
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-orange-600" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

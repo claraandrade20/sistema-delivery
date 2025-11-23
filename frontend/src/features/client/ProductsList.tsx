@@ -6,7 +6,7 @@ import { Input } from '@shared/ui/input';
 import { ImageWithFallback } from '@shared/components/figma/ImageWithFallback';
 import { Star, Clock, Search, Filter, Loader2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@shared/ui/select';
-import { produtosAPI } from '@shared/services/api';
+import { produtosAPI, categoriasAPI } from '@shared/services/api';
 import { toast } from 'sonner';
 
 interface ProductsListProps {
@@ -24,6 +24,7 @@ export const ProductsList = ({ onNavigate, initialCategoryId }: ProductsListProp
 
   useEffect(() => {
     loadProducts();
+    loadCategories();
   }, []);
 
   const loadProducts = async () => {
@@ -31,20 +32,29 @@ export const ProductsList = ({ onNavigate, initialCategoryId }: ProductsListProp
       setLoading(true);
       const data = await produtosAPI.listar();
       const productsArray = Array.isArray(data) ? data : [];
-      setProducts(productsArray);
-
-      // Extrair categorias únicas
-      const uniqueCategories = Array.from(
-        new Map(
-          productsArray
-            .filter((p: any) => p.categoryId)
-            .map((p: any) => [
-              p.categoryId,
-              { id: p.categoryId, name: `Categoria ${p.categoryId}` },
-            ])
-        ).values()
-      );
-      setCategories(uniqueCategories);
+      
+      // Mapear produtos do banco para o formato esperado
+      const mappedProducts = productsArray.map((p: any) => ({
+        id: p.id,
+        name: p.nome,
+        description: p.descricao,
+        image: p.imagem,
+        categoryId: p.id_categoria,
+        restaurantId: p.id_restaurantes,
+        isActive: p.ativo || p.disponivel,
+        isFeatured: p.destaque,
+        rating: p.avaliacao,
+        reviewsCount: p.total_avaliacoes,
+        preparationTime: p.tempo_preparo,
+        stockQuantity: p.quantidade_estoque,
+        variations: p.variacoes?.map((v: any) => ({
+          id: v.id,
+          name: v.nome,
+          price: parseFloat(v.preco) || 0,
+        })) || [],
+      }));
+      
+      setProducts(mappedProducts);
     } catch (error) {
       toast.error('Erro ao carregar produtos');
       console.error(error);
@@ -53,9 +63,29 @@ export const ProductsList = ({ onNavigate, initialCategoryId }: ProductsListProp
     }
   };
 
+  const loadCategories = async () => {
+    try {
+      const response = await categoriasAPI.listar();
+      const data = response.success ? response.data : response;
+      const categoriesArray = Array.isArray(data) ? data : [];
+      
+      // Mapear categorias do banco para o formato esperado
+      const mappedCategories = categoriesArray
+        .filter((c: any) => c.ativo)
+        .map((c: any) => ({
+          id: c.id,
+          name: c.nome,
+        }));
+      
+      setCategories(mappedCategories);
+    } catch (error) {
+      console.error('Erro ao carregar categorias:', error);
+    }
+  };
+
   let filteredProducts = products.filter(p =>
     p.isActive &&
-    (selectedCategory === 'all' || p.categoryId === selectedCategory) &&
+    (selectedCategory === 'all' || p.categoryId === parseInt(selectedCategory)) &&
     (searchQuery === '' || p.name.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 

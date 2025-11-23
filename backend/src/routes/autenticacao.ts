@@ -1,5 +1,6 @@
 import express from "express";
 import { register, login, getMe, getUsers, resetPassword } from "../controller/autenticacaoController";
+import { autenticar } from "../middleware/middlewareAutenticacao";
 
 const router = express.Router();
 
@@ -20,7 +21,7 @@ router.get("/", (req, res) => {
 router.post("/register", register);
 router.post("/login", login);
 router.post("/reset-password", resetPassword);
-router.get("/me", getMe);
+router.get("/me", autenticar, getMe);
 router.get("/users", getUsers);
 
 export default router;
