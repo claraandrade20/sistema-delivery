@@ -2,7 +2,7 @@
   {
     "id": "1",
     "name": "João Silva",
-    "email": "joao@email.com",
+    "email": "joao@gmail.com",
     "password": "$2a$10$5Iw4iIA8h1f.PP1vE7h4B.JsP0VDZBF70KAa6UPgeDycg43KRcSCm",
     "phone": "(85) 98765-4321",
     "role": "client",
@@ -12,7 +12,7 @@
   {
     "id": "2",
     "name": "Maria Santos",
-    "email": "maria@email.com",
+    "email": "maria@gmail.com",
     "password": "$2a$10$qMv2dd/d0UAwAfwLdQQnGOILGdi2wvu7KbR6BPgp6EwvuLzvcYRxG",
     "phone": "(85) 91234-5678",
     "role": "client",
@@ -23,7 +23,7 @@
     "id": "3",
     "name": "Carlos Souza",
     "email": "carlos@restaurant.com",
-    "password": "$2a$10$Y7yAj8k0OytNjxika45UAO4ghOBcJRIktCNanjBFusIdsdOI4bK.i",
+    "password": "$2a$10$903CD3eseDStvGGmgFkJYe0niuPvUUpGUYeoLUs23hNuhK8D5BO.m",
     "phone": "(85) 99999-8888",
     "role": "employee",
     "createdAt": "2023-11-10T09:00:00Z",
@@ -34,7 +34,7 @@
     "id": "4",
     "name": "Roberto Admin",
     "email": "admin@deliverysystem.com",
-    "password": "$2a$10$W.cVb8QxBll1PK5G/JXceOtxuwqITz/fbbundNIK.YiokLw5wnyXa",
+    "password": "$2a$10$UeWBRkZsaQf4C6VHIfOT7uIPfBX9NDKRQZyGS043x89X394X4RS9y",
     "phone": "(85) 77777-6666",
     "role": "admin",
     "createdAt": "2023-01-01T00:00:00Z",
@@ -52,7 +52,7 @@
   },
   {
     "id": "6",
-    "name": "rafael lopes",
+    "name": "Rafael Lopes",
     "email": "rafaellopes250106@gmail.com",
     "password": "$2a$10$Tdc6XPD4G4Tv1Psz.f1O/.p42UU.2OnkTUP1WR1utW8WjxKa/1NSq",
     "phone": "(85) 99212-7498",
@@ -78,6 +78,26 @@
     "phone": "(85) 99999-9999",
     "role": "client",
     "createdAt": "2025-11-21T11:42:36.435Z",
+    "isActive": true
+  },
+  {
+    "id": "9",
+    "name": "Pedro Caliope",
+    "email": "pedrocaliope@gmail.com",
+    "password": "$2a$10$VNEit.ET4A1MJptPJd/Ej.quYDLbTd64z3FnCjg5tBUFTjNiBq29q",
+    "phone": "(85) 98745-6123",
+    "role": "client",
+    "createdAt": "2025-11-23T02:33:33.499Z",
+    "isActive": true
+  },
+  {
+    "id": "client-1763871381431",
+    "name": "Clara Andrade",
+    "email": "clara@hotmail.com",
+    "password": "$2a$10$PIBvPy90AxjVDMpYvib6sOF1UR.wNxKv2WluVkUKJZmC.DagGNYY.",
+    "phone": "(85) 96684-5648",
+    "role": "client",
+    "createdAt": "2025-11-23T04:16:21.431Z",
     "isActive": true
   }
 ]

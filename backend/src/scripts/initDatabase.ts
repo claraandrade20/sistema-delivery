@@ -168,6 +168,7 @@ async function runMigration() {
         id INT AUTO_INCREMENT PRIMARY KEY,
         nome VARCHAR(255) NOT NULL,
         descricao TEXT,
+        imagem VARCHAR(500),
         id_restaurantes INT NOT NULL,
         ativo BOOLEAN DEFAULT true,
         criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -284,6 +285,44 @@ async function runMigration() {
     `);
     console.log("✅ Tabela ITENS_PEDIDO criada com sucesso!\n");
 
+    // ============= INSERINDO CONTAS PRINCIPAIS =============
+    console.log("📤 Inserindo contas principais...");
+    
+    // Inserir cliente principal - João
+    try {
+      await connection.execute(
+        `INSERT INTO clientes (nome, email, senha, telefone, ativo)
+         VALUES ('João Silva', 'joao@email.com', 'qualquer valor', '85988888888', true)`
+      );
+      console.log("✅ Cliente João inserido!");
+    } catch (error) {
+      console.warn(`⚠️ Erro ao inserir cliente João:`, (error as any).message);
+    }
+
+    // Inserir admin principal
+    try {
+      await connection.execute(
+        `INSERT INTO usuarios (nome, email, senha, telefone, funcao, id_restaurantes, ativo)
+         VALUES ('Admin Principal', 'admin@deliverysystem.com', 'qualquer valor', '85999999999', 'administrador', 1, true)`
+      );
+      console.log("✅ Admin inserido!");
+    } catch (error) {
+      console.warn(`⚠️ Erro ao inserir admin:`, (error as any).message);
+    }
+
+    // Inserir funcionário principal - Carlos
+    try {
+      await connection.execute(
+        `INSERT INTO usuarios (nome, email, senha, telefone, funcao, id_restaurantes, ativo)
+         VALUES ('Carlos Silva', 'carlos@restaurant.com', 'qualquer valor', '85987777777', 'funcionario', 1, true)`
+      );
+      console.log("✅ Funcionário Carlos inserido!");
+    } catch (error) {
+      console.warn(`⚠️ Erro ao inserir funcionário:`, (error as any).message);
+    }
+
+    console.log("");
+
     // ============= MIGRANDO DADOS =============
     console.log("🔄 Migrando dados dos JSONs...\n");
 
@@ -382,14 +421,14 @@ async function runMigration() {
     // Inserir categorias padrão
     console.log("📤 Inserindo categorias...");
     await connection.execute(
-      `INSERT INTO categorias (nome, descricao, id_restaurantes, ativo)
+      `INSERT INTO categorias (nome, descricao, imagem, id_restaurantes, ativo)
        VALUES 
-       ('Pizzas', 'Pizzas deliciosas', 1, true),
-       ('Bebidas', 'Bebidas variadas', 1, true),
-       ('Sobremesas', 'Doces e sobremesas deliciosas', 1, true),
-       ('Massas', 'Massas frescas e tradicionais', 1, true),
-       ('Saladas', 'Saladas frescas e saudáveis', 1, true),
-       ('Hambúrgueres', 'Burgers artesanais e gourmet', 2, true)`
+       ('Pizzas', 'Pizzas deliciosas', 'https://images.unsplash.com/photo-1677030002034-e1d081abfb97?w=400&h=300&fit=crop', 1, true),
+       ('Bebidas', 'Bebidas variadas', 'https://images.unsplash.com/photo-1732029543356-44fadaeeca51?w=400&h=300&fit=crop', 1, true),
+       ('Sobremesas', 'Doces e sobremesas deliciosas', 'https://images.unsplash.com/photo-1607257882338-70f7dd2ae344?w=400&h=300&fit=crop', 1, true),
+       ('Massas', 'Massas frescas e tradicionais', 'https://images.unsplash.com/photo-1749169337822-d875fd6f4c9d?w=400&h=300&fit=crop', 1, true),
+       ('Saladas', 'Saladas frescas e saudáveis', 'https://images.unsplash.com/photo-1692194741267-3df1119973ff?w=400&h=300&fit=crop', 1, true),
+       ('Hambúrgueres', 'Burgers artesanais e gourmet', 'https://images.unsplash.com/photo-1627378378955-a3f4e406c5de?w=400&h=300&fit=crop', 2, true)`
     );
     console.log("✅ Categorias inseridas com sucesso!\n");
 

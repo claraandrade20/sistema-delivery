@@ -31,6 +31,8 @@ export const Login = ({ onSuccess }: LoginProps) => {
   
   // Recovery state
   const [recoveryEmail, setRecoveryEmail] = useState('');
+  const [recoveryPassword, setRecoveryPassword] = useState('');
+  const [recoveryConfirmPassword, setRecoveryConfirmPassword] = useState('');
   const [showRecovery, setShowRecovery] = useState(false);
   
   const [isLoading, setIsLoading] = useState(false);
@@ -44,6 +46,31 @@ export const Login = ({ onSuccess }: LoginProps) => {
     if (truncated.length <= 2) return truncated;
     if (truncated.length <= 7) return `(${truncated.slice(0, 2)}) ${truncated.slice(2)}`;
     return `(${truncated.slice(0, 2)}) ${truncated.slice(2, 7)}-${truncated.slice(7)}`;
+  };
+
+  // === FILTRO DE NOME - Apenas letras ===
+  const handleNameChange = (value: string) => {
+    // Aceita apenas letras e espaços
+    const apenasLetras = value.replace(/[^a-zA-Z\s]/g, '');
+    
+    // Formatar cada palavra com primeira letra maiúscula
+    const nomeFormatado = apenasLetras
+      .split(' ')
+      .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase())
+      .join(' ');
+    
+    setRegisterName(nomeFormatado);
+  };
+
+  // === FORMATADOR DE EMAIL - Primeira letra minúscula, permite números ===
+  const handleEmailChange = (value: string) => {
+    // Remove espaços e converte para minúsculas
+    let emailLimpo = value.trim().toLowerCase();
+    
+    // Remove tudo que não é letra, número, @ ou ponto
+    emailLimpo = emailLimpo.replace(/[^a-z0-9@.]/g, '');
+    
+    setRegisterEmail(emailLimpo);
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -78,10 +105,6 @@ export const Login = ({ onSuccess }: LoginProps) => {
     }
     
     // === 2. Validar Nome ===
-    if (/\d/.test(registerName)) {
-      toast.error('O nome não pode conter números');
-      return;
-    }
     if (registerName.trim().split(' ').length < 2) {
       toast.error('Digite seu nome completo (Nome e Sobrenome)');
       return;
@@ -97,20 +120,16 @@ export const Login = ({ onSuccess }: LoginProps) => {
     // Lista de domínios permitidos
     const allowedDomains = [
       'gmail.com', 
-      'hotmail.com', 'hotmail.com.br',
-      'outlook.com', 'outlook.com.br',
-      'yahoo.com', 'yahoo.com.br',
-      'live.com',
-      'icloud.com',
-      'uol.com.br',
-      'bol.com.br',
-      'terra.com.br'
+      'hotmail.com',
+      'yahoo.com',
+      'restaurant.com',
+      'deliverysystem.com'
     ];
 
     const emailDomain = registerEmail.split('@')[1]?.toLowerCase();
 
     if (!allowedDomains.includes(emailDomain)) {
-      toast.error('Use um e-mail pessoal válido (Gmail, Hotmail, Outlook, Yahoo, etc).');
+      toast.error('Use um e-mail pessoal válido (Gmail, Hotmail, Yahoo, etc).');
       return;
     }
 
@@ -133,14 +152,30 @@ export const Login = ({ onSuccess }: LoginProps) => {
       return;
     }
     
-    if (registerPassword.length < 6) {
-      toast.error('A senha deve ter pelo menos 6 caracteres');
+    if (registerPassword.length < 6 || registerPassword.length > 8) {
+      toast.error('A senha deve ter entre 6 e 8 caracteres');
+      return;
+    }
+    
+    // Validar se tem maiúscula e minúscula
+    const temMaiuscula = /[A-Z]/.test(registerPassword);
+    const temMinuscula = /[a-z]/.test(registerPassword);
+    
+    if (!temMaiuscula || !temMinuscula) {
+      toast.error('A senha deve conter letras maiúsculas e minúsculas');
       return;
     }
 
     setIsLoading(true);
     
     try {
+      console.log('Dados enviados para registro:', {
+        name: registerName,
+        email: registerEmail,
+        phone: registerPhone,
+        password: registerPassword
+      });
+      
       // Tenta registrar
       const result = await register(registerName, registerEmail, registerPhone, registerPassword);
       
@@ -183,13 +218,74 @@ export const Login = ({ onSuccess }: LoginProps) => {
 
   const handleRecovery = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!recoveryEmail) {
-      toast.error('Digite seu email');
+    
+    // Validações
+    if (!recoveryEmail || !recoveryPassword || !recoveryConfirmPassword) {
+      toast.error('Preencha todos os campos');
       return;
     }
-    toast.success('Instruções enviadas para seu email!');
-    setShowRecovery(false);
-    setRecoveryEmail('');
+
+    // Validar email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(recoveryEmail)) {
+      toast.error('Digite um e-mail válido');
+      return;
+    }
+
+    // Validar se as senhas coincidem
+    if (recoveryPassword !== recoveryConfirmPassword) {
+      toast.error('As senhas não coincidem');
+      return;
+    }
+
+    // Validar tamanho da senha
+    if (recoveryPassword.length < 6 || recoveryPassword.length > 8) {
+      toast.error('A senha deve ter entre 6 e 8 caracteres');
+      return;
+    }
+
+    // Validar se tem maiúscula e minúscula
+    const temMaiuscula = /[A-Z]/.test(recoveryPassword);
+    const temMinuscula = /[a-z]/.test(recoveryPassword);
+    
+    if (!temMaiuscula || !temMinuscula) {
+      toast.error('A senha deve conter letras maiúsculas e minúsculas');
+      return;
+    }
+
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('http://localhost:3000/api/auth/reset-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: recoveryEmail,
+          newPassword: recoveryPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.erro || 'Erro ao recuperar senha');
+      }
+
+      toast.success('Senha alterada com sucesso! Faça login com a nova senha.');
+      setShowRecovery(false);
+      setRecoveryEmail('');
+      setRecoveryPassword('');
+      setRecoveryConfirmPassword('');
+      setLoginEmail(recoveryEmail);
+      setActiveTab('login');
+    } catch (error: any) {
+      console.error('Erro:', error);
+      toast.error(error.message || 'Erro ao recuperar senha');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (showRecovery) {
@@ -202,13 +298,13 @@ export const Login = ({ onSuccess }: LoginProps) => {
             </div>
             <CardTitle>Recuperar Senha</CardTitle>
             <CardDescription>
-              Digite seu email para receber instruções de recuperação
+              Digite seu email cadastrado e crie uma nova senha
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleRecovery} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="recovery-email">Email</Label>
+                <Label htmlFor="recovery-email">Email Cadastrado</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
@@ -221,16 +317,58 @@ export const Login = ({ onSuccess }: LoginProps) => {
                   />
                 </div>
               </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="recovery-password">Nova Senha</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="recovery-password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="pl-10"
+                    value={recoveryPassword}
+                    onChange={(e) => setRecoveryPassword(e.target.value)}
+                  />
+                </div>
+                <p className="text-xs text-gray-500">
+                  6-8 caracteres (maiúscula + minúscula)
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="recovery-confirm-password">Confirmar Senha</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                  <Input
+                    id="recovery-confirm-password"
+                    type="password"
+                    placeholder="••••••••"
+                    className="pl-10"
+                    value={recoveryConfirmPassword}
+                    onChange={(e) => setRecoveryConfirmPassword(e.target.value)}
+                  />
+                </div>
+              </div>
               
               <div className="space-y-2">
-                <Button type="submit" className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700">
-                  Enviar Instruções
+                <Button 
+                  type="submit" 
+                  className="w-full bg-gradient-to-r from-orange-500 to-red-600 hover:from-orange-600 hover:to-red-700"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Alterando...' : 'Alterar Senha'}
                 </Button>
                 <Button
                   type="button"
                   variant="ghost"
                   className="w-full"
-                  onClick={() => setShowRecovery(false)}
+                  onClick={() => {
+                    setShowRecovery(false);
+                    setRecoveryEmail('');
+                    setRecoveryPassword('');
+                    setRecoveryConfirmPassword('');
+                  }}
                 >
                   Voltar ao Login
                 </Button>
@@ -331,7 +469,7 @@ export const Login = ({ onSuccess }: LoginProps) => {
                       placeholder="João Silva"
                       className="pl-10"
                       value={registerName}
-                      onChange={(e) => setRegisterName(e.target.value)}
+                      onChange={(e) => handleNameChange(e.target.value)}
                     />
                   </div>
                 </div>
@@ -343,10 +481,10 @@ export const Login = ({ onSuccess }: LoginProps) => {
                     <Input
                       id="register-email"
                       type="email"
-                      placeholder="seu@gmail.com"
+                      placeholder="Seu@gmail.com"
                       className="pl-10"
                       value={registerEmail}
-                      onChange={(e) => setRegisterEmail(e.target.value)}
+                      onChange={(e) => handleEmailChange(e.target.value)}
                     />
                   </div>
                 </div>
@@ -379,8 +517,12 @@ export const Login = ({ onSuccess }: LoginProps) => {
                       className="pl-10"
                       value={registerPassword}
                       onChange={(e) => setRegisterPassword(e.target.value)}
+                      maxLength={8}
                     />
                   </div>
+                  <p className="text-xs text-gray-500">
+                    6-8 caracteres (maiúscula + minúscula)
+                  </p>
                 </div>
                 
                 <div className="space-y-2">

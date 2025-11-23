@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import * as service from "../service/autenticacaoService";
+import * as service from "../service/autenticacaoServiceDB";
 
 export async function register(req: Request, res: Response) {
   try {
@@ -58,5 +58,20 @@ export async function getUsers(req: Request, res: Response) {
     res.json(usuarios);
   } catch (error: any) {
     res.status(500).json({ erro: error.message });
+  }
+}
+
+export async function resetPassword(req: Request, res: Response) {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({ erro: "Email e nova senha são obrigatórios" });
+    }
+
+    const usuario = await service.recuperarSenha(email, newPassword);
+    res.json({ mensagem: "Senha alterada com sucesso", usuario });
+  } catch (error: any) {
+    res.status(400).json({ erro: error.message });
   }
 }

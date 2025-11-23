@@ -10,7 +10,7 @@ import { useAuth } from '@shared/context/AuthContext';
 import { toast } from 'sonner';
 import { CreditCard, Smartphone, Ticket, Wallet, MapPin, Check, Loader2 } from 'lucide-react';
 import type { PaymentMethod } from '@shared/types';
-import { pedidosAPI, enderecosAPI } from '@shared/services/api';
+import { pedidosAPI, enderecosAPI, cuponsAPI } from '@shared/services/api';
 
 interface CheckoutProps {
   onNavigate: (page: string, data?: any) => void;
@@ -37,12 +37,45 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
   const [observations, setObservations] = useState('');
   const [couponCode, setCouponCode] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [isCouponLoading, setIsCouponLoading] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
 
   const subtotal = getTotal();
   const deliveryFee = 10; // Valor padrão
-  const discount = 0; // Implementar lógica de cupom
-  const total = subtotal + deliveryFee - discount;
+  
+  // Função para calcular desconto
+  const calculateDiscount = (coupon: any, subtotal: number) => {
+    if (!coupon) return 0;
+    
+    // Verificar uso mínimo
+    if (coupon.uso_minimo && subtotal < parseFloat(coupon.uso_minimo || 0)) {
+      return 0;
+    }
+
+    if (coupon.tipo_desconto === 'percentual') {
+      const valorDesconto = parseFloat(coupon.valor_desconto || 0);
+      return Math.min((subtotal * valorDesconto) / 100, subtotal);
+    } else if (coupon.tipo_desconto === 'fixo') {
+      const valorDesconto = parseFloat(coupon.valor_desconto || 0);
+      // Para frete grátis, se valor_desconto é 0, aplicar desconto na taxa de entrega
+      if (valorDesconto === 0 && coupon.codigo === 'FRETEGRATIS') {
+        return deliveryFee;
+      }
+      return Math.min(valorDesconto, subtotal);
+    }
+    
+    return 0;
+  };
+  
+  const discount = appliedCoupon ? calculateDiscount(appliedCoupon, subtotal) : 0;
+  
+  // Para cupom de frete grátis, desconto é aplicado na taxa de entrega
+  const isFreteGratis = appliedCoupon?.codigo === 'FRETEGRATIS' && discount === deliveryFee;
+  const finalDeliveryFee = isFreteGratis ? 0 : deliveryFee;
+  const finalDiscount = isFreteGratis ? 0 : discount;
+  
+  const total = subtotal + finalDeliveryFee - finalDiscount;
 
   // Carregar endereços do backend
   useEffect(() => {
@@ -70,6 +103,52 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
 
     fetchAddresses();
   }, [user?.email]);
+
+
+
+  const applyCoupon = async () => {
+    if (!couponCode.trim()) {
+      toast.error('Digite o código do cupom');
+      return;
+    }
+
+    setIsCouponLoading(true);
+    try {
+      const response = await cuponsAPI.buscarPorCodigo(couponCode.trim().toUpperCase());
+      
+      if (response && response.sucesso && response.dados) {
+        const coupon = response.dados;
+        
+        // Verificar uso mínimo
+        const usoMinimo = parseFloat(coupon.uso_minimo || 0);
+        if (usoMinimo > 0 && subtotal < usoMinimo) {
+          toast.error(`Cupom válido apenas para pedidos acima de R$ ${usoMinimo.toFixed(2)}`);
+          setIsCouponLoading(false);
+          return;
+        }
+
+        setAppliedCoupon(coupon);
+        const valorDesconto = parseFloat(coupon.valor_desconto || 0);
+        const descontoMsg = coupon.tipo_desconto === 'percentual' 
+          ? `${valorDesconto}%` 
+          : `R$ ${valorDesconto.toFixed(2)}`;
+        toast.success(`Cupom aplicado! Desconto de ${descontoMsg}`);
+      } else {
+        toast.error('Cupom inválido ou expirado');
+      }
+    } catch (error: any) {
+      console.error('Erro ao aplicar cupom:', error);
+      toast.error(error.message || 'Cupom inválido ou expirado');
+    } finally {
+      setIsCouponLoading(false);
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    toast.success('Cupom removido');
+  };
 
   const paymentMethods = [
     { id: 'pix', label: 'PIX', icon: Smartphone, description: 'Aprovação imediata' },
@@ -108,8 +187,8 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
         restaurantName: 'Restaurante',
         paymentMethod: paymentMethod,
         subtotal: subtotal,
-        deliveryFee: deliveryFee,
-        discount: discount,
+        deliveryFee: finalDeliveryFee,
+        discount: finalDiscount,
         total: total,
         status: 'pending',
         deliveryAddress: addressStr,
@@ -126,6 +205,15 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
 
       const response = await pedidosAPI.criar(orderData);
       const orderId = response.id || `order-${Date.now()}`;
+
+      // Se houve um cupom aplicado, marcar como usado
+      if (appliedCoupon) {
+        try {
+          await cuponsAPI.usar(appliedCoupon.codigo);
+        } catch (error) {
+          console.warn('Erro ao marcar cupom como usado:', error);
+        }
+      }
 
       clearCart();
       toast.success('Pedido realizado com sucesso!');
@@ -228,14 +316,155 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
               <CardTitle>Cupom de Desconto</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Digite o código do cupom"
-                  value={couponCode}
-                  onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                />
-                <Button variant="outline">Aplicar</Button>
-              </div>
+              {appliedCoupon ? (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 bg-green-50 border border-green-200 rounded-lg">
+                    <div>
+                      <p className="font-semibold text-green-800">{appliedCoupon.codigo}</p>
+                      <p className="text-sm text-green-600">
+                        {appliedCoupon.descricao}
+                      </p>
+                      <p className="text-sm text-green-600">
+                        Desconto: {appliedCoupon.tipo_desconto === 'percentual' 
+                          ? `${appliedCoupon.valor_desconto}%` 
+                          : `R$ ${appliedCoupon.valor_desconto.toFixed(2)}`
+                        }
+                      </p>
+                    </div>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={removeCoupon}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Remover
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex gap-2">
+                    <Input
+                      placeholder="Digite o código do cupom"
+                      value={couponCode}
+                      onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+                      disabled={isCouponLoading}
+                    />
+                    <Button 
+                      variant="outline" 
+                      onClick={applyCoupon}
+                      disabled={isCouponLoading || !couponCode.trim()}
+                    >
+                      {isCouponLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        'Aplicar'
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {/* Lista de cupons disponíveis */}
+                  <div className="border-t pt-3">
+                    <p className="text-sm font-medium text-gray-700 mb-2">Cupons Disponíveis:</p>
+                    <div className="grid grid-cols-1 gap-2">
+                      <div className="flex justify-between items-center p-2 bg-blue-50 rounded-lg border">
+                        <div>
+                          <span className="font-mono font-bold text-blue-800">PROMO10</span>
+                          <p className="text-xs text-blue-600">10% de desconto</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => {
+                            setCouponCode('PROMO10');
+                            setTimeout(() => applyCoupon(), 100);
+                          }}
+                          className="text-blue-600 hover:text-blue-700"
+                          disabled={isCouponLoading}
+                        >
+                          Usar
+                        </Button>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-2 bg-purple-50 rounded-lg border">
+                        <div>
+                          <span className="font-mono font-bold text-purple-800">BLACKFRIDAY20</span>
+                          <p className="text-xs text-purple-600">20% off acima de R$ 100</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => {
+                            setCouponCode('BLACKFRIDAY20');
+                            setTimeout(() => applyCoupon(), 100);
+                          }}
+                          className="text-purple-600 hover:text-purple-700"
+                          disabled={isCouponLoading}
+                        >
+                          Usar
+                        </Button>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-2 bg-green-50 rounded-lg border">
+                        <div>
+                          <span className="font-mono font-bold text-green-800">WELCOME15</span>
+                          <p className="text-xs text-green-600">15% primeiro pedido</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => {
+                            setCouponCode('WELCOME15');
+                            setTimeout(() => applyCoupon(), 100);
+                          }}
+                          className="text-green-600 hover:text-green-700"
+                          disabled={isCouponLoading}
+                        >
+                          Usar
+                        </Button>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-2 bg-yellow-50 rounded-lg border">
+                        <div>
+                          <span className="font-mono font-bold text-yellow-800">FRETEGRATIS</span>
+                          <p className="text-xs text-yellow-600">Frete grátis acima de R$ 50</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => {
+                            setCouponCode('FRETEGRATIS');
+                            setTimeout(() => applyCoupon(), 100);
+                          }}
+                          className="text-yellow-600 hover:text-yellow-700"
+                          disabled={isCouponLoading}
+                        >
+                          Usar
+                        </Button>
+                      </div>
+                      
+                      <div className="flex justify-between items-center p-2 bg-orange-50 rounded-lg border">
+                        <div>
+                          <span className="font-mono font-bold text-orange-800">DELIVERY5</span>
+                          <p className="text-xs text-orange-600">R$ 5 off acima de R$ 20</p>
+                        </div>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => {
+                            setCouponCode('DELIVERY5');
+                            setTimeout(() => applyCoupon(), 100);
+                          }}
+                          className="text-orange-600 hover:text-orange-700"
+                          disabled={isCouponLoading}
+                        >
+                          Usar
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -279,12 +508,22 @@ export const Checkout = ({ onNavigate }: CheckoutProps) => {
                 </div>
                 <div className="flex justify-between text-gray-600">
                   <span>Taxa de entrega</span>
-                  <span>R$ {deliveryFee.toFixed(2)}</span>
+                  <span className={isFreteGratis ? "line-through text-gray-400" : ""}>
+                    R$ {deliveryFee.toFixed(2)}
+                  </span>
+                  {isFreteGratis && (
+                    <span className="text-green-600 ml-2">GRÁTIS</span>
+                  )}
                 </div>
-                {discount > 0 && (
+                {finalDiscount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>Desconto</span>
-                    <span>- R$ {discount.toFixed(2)}</span>
+                    <span>Desconto {appliedCoupon?.codigo}</span>
+                    <span>- R$ {finalDiscount.toFixed(2)}</span>
+                  </div>
+                )}
+                {appliedCoupon && (
+                  <div className="text-xs text-green-600 bg-green-50 p-2 rounded">
+                    ✅ Cupom "{appliedCoupon.codigo}" aplicado!
                   </div>
                 )}
               </div>

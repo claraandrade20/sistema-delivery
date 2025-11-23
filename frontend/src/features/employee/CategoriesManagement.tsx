@@ -13,39 +13,37 @@ import {
 import { Label } from '@shared/ui/label';
 import { toast } from 'sonner';
 import { Plus, Edit, Eye, EyeOff, Trash2, Loader2, RefreshCw } from 'lucide-react';
+import { categoriasAPI } from '@shared/services/api';
 
-// Categorias padrão - dados simulados
-const defaultCategories = [
-  { id: '1', name: 'Pizzas', description: 'Deliciosas pizzas variadas', image: 'https://images.unsplash.com/photo-1677030002034-e1d081abfb97', isActive: true },
-  { id: '2', name: 'Bebidas', description: 'Bebidas frias e quentes', image: 'https://images.unsplash.com/photo-1732029543356-44fadaeeca51', isActive: true },
-  { id: '3', name: 'Sobremesas', description: 'Doces para finalizar', image: 'https://images.unsplash.com/photo-1607257882338-70f7dd2ae344', isActive: true },
-  { id: '4', name: 'Massas', description: 'Massas frescas e saborosas', image: 'https://images.unsplash.com/photo-1749169337822-d875fd6f4c9d', isActive: true },
-  { id: '5', name: 'Saladas', description: 'Saladas saudáveis', image: 'https://images.unsplash.com/photo-1692194741267-3df1119973ff', isActive: true },
-  { id: '6', name: 'Hambúrgueres', description: 'Burgers gourmet', image: 'https://images.unsplash.com/photo-1627378378955-a3f4e406c5de', isActive: true },
-];
+interface Categoria {
+  id: number;
+  nome: string;
+  descricao?: string;
+  imagem?: string;
+  id_restaurantes: number;
+  ativo: boolean;
+  criado_em: string;
+}
 
 export const CategoriesManagement = () => {
-  const [categories, setCategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Categoria[]>([]);
   const [loading, setLoading] = useState(false);
 
   // NOVA CATEGORIA
   const [isNewModalOpen, setIsNewModalOpen] = useState(false);
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
-  const [newImageFile, setNewImageFile] = useState<File | null>(null);
-  const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
+  const [newImageUrl, setNewImageUrl] = useState('');
   const [savingNew, setSavingNew] = useState(false);
 
   // EDITAR CATEGORIA
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingCategory, setEditingCategory] = useState<any | null>(null);
-  const [editImageFile, setEditImageFile] = useState<File | null>(null);
-  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [editingCategory, setEditingCategory] = useState<Categoria | null>(null);
   const [savingEdit, setSavingEdit] = useState(false);
 
   // DELETAR CATEGORIA
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [categoryToDelete, setCategoryToDelete] = useState<any | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<Categoria | null>(null);
   const [deletingCategory, setDeletingCategory] = useState(false);
 
   useEffect(() => {
@@ -55,41 +53,45 @@ export const CategoriesManagement = () => {
   const loadCategories = async () => {
     try {
       setLoading(true);
-      // Por enquanto usando dados padrão
-      // Em produção, seria uma chamada à API
-      setCategories(defaultCategories);
-    } catch (error) {
-      toast.error('Erro ao carregar categorias');
+      const response = await categoriasAPI.listar({ restaurantId: '1' });
+      if (response.success) {
+        setCategories(response.data);
+      } else {
+        throw new Error(response.error || 'Erro ao carregar categorias');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao carregar categorias');
       console.error(error);
-      setCategories(defaultCategories);
     } finally {
       setLoading(false);
     }
   };
 
-  const toggleCategoryStatus = (categoryId: string) => {
-    setCategories(prev =>
-      prev.map(cat =>
-        cat.id === categoryId ? { ...cat, isActive: !cat.isActive } : cat
-      )
-    );
-    toast.success('Status da categoria atualizado!');
+  const toggleCategoryStatus = async (categoryId: number) => {
+    try {
+      const response = await categoriasAPI.alternarStatus(categoryId.toString());
+      if (response.success) {
+        setCategories(prev =>
+          prev.map(cat =>
+            cat.id === categoryId ? { ...cat, ativo: !cat.ativo } : cat
+          )
+        );
+        toast.success(response.message || 'Status da categoria atualizado!');
+      } else {
+        throw new Error(response.error || 'Erro ao atualizar status');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao atualizar status da categoria');
+      console.error(error);
+    }
   };
 
   // ----------- NOVA CATEGORIA -----------
   const openNewModal = () => {
     setNewName('');
     setNewDescription('');
-    setNewImageFile(null);
-    setNewImagePreview(null);
+    setNewImageUrl('');
     setIsNewModalOpen(true);
-  };
-
-  const handleNewImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setNewImageFile(file);
-    setNewImagePreview(URL.createObjectURL(file));
   };
 
   const handleCreateCategory = async () => {
@@ -100,19 +102,22 @@ export const CategoriesManagement = () => {
 
     try {
       setSavingNew(true);
-      const newCategory = {
-        id: crypto.randomUUID(),
-        name: newName,
-        description: newDescription,
-        image: newImagePreview || 'https://via.placeholder.com/400x300?text=' + encodeURIComponent(newName),
-        isActive: true,
-      };
+      const response = await categoriasAPI.criar({
+        nome: newName.trim(),
+        descricao: newDescription.trim() || null,
+        imagem: newImageUrl.trim() || null,
+        id_restaurantes: 1
+      });
 
-      setCategories(prev => [...prev, newCategory]);
-      toast.success('Categoria criada com sucesso!');
-      setIsNewModalOpen(false);
-    } catch (error) {
-      toast.error('Erro ao criar categoria');
+      if (response.success) {
+        setCategories(prev => [...prev, response.data]);
+        toast.success(response.message || 'Categoria criada com sucesso!');
+        setIsNewModalOpen(false);
+      } else {
+        throw new Error(response.error || 'Erro ao criar categoria');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao criar categoria');
       console.error(error);
     } finally {
       setSavingNew(false);
@@ -120,43 +125,39 @@ export const CategoriesManagement = () => {
   };
 
   // ----------- EDITAR CATEGORIA -----------
-  const openEditModal = (category: any) => {
+  const openEditModal = (category: Categoria) => {
     setEditingCategory({ ...category });
-    setEditImagePreview(category.image);
-    setEditImageFile(null);
     setIsEditModalOpen(true);
   };
 
-  const handleEditImage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setEditImageFile(file);
-    setEditImagePreview(URL.createObjectURL(file));
-  };
-
   const handleSaveEditCategory = async () => {
-    if (!editingCategory.name.trim()) {
+    if (!editingCategory || !editingCategory.nome.trim()) {
       toast.error('O nome da categoria é obrigatório.');
       return;
     }
 
     try {
       setSavingEdit(true);
-      setCategories(prev =>
-        prev.map(cat =>
-          cat.id === editingCategory.id
-            ? {
-                ...editingCategory,
-                image: editImagePreview || cat.image,
-              }
-            : cat
-        )
-      );
+      const response = await categoriasAPI.atualizar(editingCategory.id.toString(), {
+        nome: editingCategory.nome.trim(),
+        descricao: editingCategory.descricao?.trim() || null,
+        imagem: editingCategory.imagem?.trim() || null,
+        ativo: editingCategory.ativo
+      });
 
-      toast.success('Categoria atualizada com sucesso!');
-      setIsEditModalOpen(false);
-    } catch (error) {
-      toast.error('Erro ao atualizar categoria');
+      if (response.success) {
+        setCategories(prev =>
+          prev.map(cat =>
+            cat.id === editingCategory.id ? response.data : cat
+          )
+        );
+        toast.success(response.message || 'Categoria atualizada com sucesso!');
+        setIsEditModalOpen(false);
+      } else {
+        throw new Error(response.error || 'Erro ao atualizar categoria');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao atualizar categoria');
       console.error(error);
     } finally {
       setSavingEdit(false);
@@ -164,20 +165,40 @@ export const CategoriesManagement = () => {
   };
 
   // ----------- DELETAR CATEGORIA -----------
-  const openDeleteModal = (category: any) => {
+  const openDeleteModal = (category: Categoria) => {
     setCategoryToDelete(category);
     setIsDeleteModalOpen(true);
   };
 
   const confirmDeleteCategory = async () => {
+    if (!categoryToDelete) return;
+
     try {
       setDeletingCategory(true);
-      setCategories(prev => prev.filter(cat => cat.id !== categoryToDelete.id));
-      toast.success('Categoria removida com sucesso!');
-      setIsDeleteModalOpen(false);
-    } catch (error) {
-      toast.error('Erro ao remover categoria');
-      console.error(error);
+      const response = await categoriasAPI.deletar(categoryToDelete.id.toString());
+      
+      if (response.success) {
+        setCategories(prev => prev.filter(cat => cat.id !== categoryToDelete.id));
+        toast.success(response.message || 'Categoria removida com sucesso!');
+        setIsDeleteModalOpen(false);
+      } else {
+        throw new Error(response.error || 'Erro ao remover categoria');
+      }
+    } catch (error: any) {
+      // Tentar extrair a mensagem de erro do servidor
+      let errorMessage = 'Erro ao remover categoria';
+      
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      // Se o erro vem do servidor com uma estrutura específica
+      if (error.error) {
+        errorMessage = error.error;
+      }
+      
+      toast.error(errorMessage);
+      console.error('Erro ao deletar categoria:', error);
     } finally {
       setDeletingCategory(false);
     }
@@ -234,15 +255,25 @@ export const CategoriesManagement = () => {
                 </div>
 
                 <div>
-                  <Label>Imagem</Label>
-                  <Input type="file" accept="image/*" onChange={handleNewImage} />
-                  {newImagePreview && (
+                  <Label>URL da Imagem</Label>
+                  <Input
+                    placeholder="https://exemplo.com/imagem.jpg"
+                    value={newImageUrl}
+                    onChange={e => setNewImageUrl(e.target.value)}
+                  />
+                  {newImageUrl && (
                     <img
-                      src={newImagePreview}
+                      src={newImageUrl}
+                      alt="Preview"
                       className="w-full h-32 object-cover rounded-lg mt-2"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                      }}
                     />
                   )}
                 </div>
+
+
 
                 <Button 
                   className="w-full" 
@@ -280,19 +311,28 @@ export const CategoriesManagement = () => {
           {categories.map(category => (
             <Card key={category.id}>
               <CardContent className="p-4">
-                <img
-                  src={category.image}
-                  alt={category.name}
-                  className="w-full h-32 object-cover rounded-lg mb-3"
-                />
+                {category.imagem ? (
+                  <img
+                    src={category.imagem}
+                    alt={category.nome}
+                    className="w-full h-32 object-cover rounded-lg mb-3"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = `https://via.placeholder.com/400x300/3B82F6/FFFFFF?text=${encodeURIComponent(category.nome.charAt(0))}`;
+                    }}
+                  />
+                ) : (
+                  <div className="w-full h-32 bg-gradient-to-br from-blue-100 to-blue-200 rounded-lg mb-3 flex items-center justify-center">
+                    <h3 className="text-2xl font-bold text-blue-600">{category.nome.charAt(0)}</h3>
+                  </div>
+                )}
 
                 <div className="flex items-start justify-between mb-2">
                   <div>
-                    <h3 className="font-semibold">{category.name}</h3>
-                    <p className="text-sm text-gray-600">{category.description}</p>
+                    <h3 className="font-semibold">{category.nome}</h3>
+                    <p className="text-sm text-gray-600">{category.descricao || 'Sem descrição'}</p>
                   </div>
 
-                  {category.isActive ? (
+                  {category.ativo ? (
                     <Badge className="bg-green-500">Ativa</Badge>
                   ) : (
                     <Badge variant="secondary">Inativa</Badge>
@@ -317,7 +357,7 @@ export const CategoriesManagement = () => {
                     size="sm"
                     onClick={() => toggleCategoryStatus(category.id)}
                   >
-                    {category.isActive ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    {category.ativo ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                   </Button>
 
                   {/* DELETAR */}
@@ -348,9 +388,9 @@ export const CategoriesManagement = () => {
               <div>
                 <Label>Nome *</Label>
                 <Input
-                  value={editingCategory.name}
+                  value={editingCategory.nome}
                   onChange={e =>
-                    setEditingCategory({ ...editingCategory, name: e.target.value })
+                    setEditingCategory({ ...editingCategory, nome: e.target.value })
                   }
                 />
               </div>
@@ -358,23 +398,36 @@ export const CategoriesManagement = () => {
               <div>
                 <Label>Descrição</Label>
                 <Input
-                  value={editingCategory.description}
+                  value={editingCategory.descricao || ''}
                   onChange={e =>
                     setEditingCategory({
                       ...editingCategory,
-                      description: e.target.value,
+                      descricao: e.target.value,
                     })
                   }
                 />
               </div>
 
               <div>
-                <Label>Imagem</Label>
-                <Input type="file" accept="image/*" onChange={handleEditImage} />
-                {editImagePreview && (
+                <Label>URL da Imagem</Label>
+                <Input
+                  placeholder="https://exemplo.com/imagem.jpg"
+                  value={editingCategory.imagem || ''}
+                  onChange={e =>
+                    setEditingCategory({
+                      ...editingCategory,
+                      imagem: e.target.value,
+                    })
+                  }
+                />
+                {editingCategory.imagem && (
                   <img
-                    src={editImagePreview}
+                    src={editingCategory.imagem}
+                    alt="Preview"
                     className="w-full h-32 object-cover rounded-lg mt-2"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
                   />
                 )}
               </div>
@@ -406,11 +459,18 @@ export const CategoriesManagement = () => {
               <DialogTitle>Remover Categoria</DialogTitle>
             </DialogHeader>
 
-            <p className="text-sm text-gray-600">
-              Tem certeza que deseja remover{' '}
-              <strong>{categoryToDelete.name}</strong>?<br />
-              Essa ação não pode ser desfeita.
-            </p>
+            <div className="text-sm text-gray-600">
+              <p className="mb-2">
+                Tem certeza que deseja remover{' '}
+                <strong>{categoryToDelete.nome}</strong>?
+              </p>
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                <p className="text-yellow-800 text-xs">
+                  <strong>⚠️ Atenção:</strong> Esta ação não pode ser desfeita.
+                  Se houver produtos associados a esta categoria, a remoção será bloqueada.
+                </p>
+              </div>
+            </div>
 
             <div className="mt-6 flex justify-end gap-2">
               <Button 

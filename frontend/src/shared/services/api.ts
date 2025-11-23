@@ -30,8 +30,15 @@ async function fetchAPI(endpoint: string, options: RequestInit = {}) {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ erro: 'Erro desconhecido' }));
-      throw new Error(error.erro || `Erro ${response.status}`);
+      try {
+        const errorData = await response.json();
+        // Verificar diferentes formatos de erro que o servidor pode retornar
+        const errorMessage = errorData.error || errorData.erro || errorData.message || `Erro ${response.status}`;
+        throw new Error(errorMessage);
+      } catch (parseError) {
+        // Se não conseguir fazer parse do JSON, usar erro genérico
+        throw new Error(`Erro ${response.status}: ${response.statusText}`);
+      }
     }
 
     // Para respostas 204 (No Content)
@@ -252,6 +259,48 @@ export const cuponsAPI = {
   },
 };
 
+// ========== Categorias ==========
+
+export const categoriasAPI = {
+  listar: async (params?: { restaurantId?: string }) => {
+    const queryParams = new URLSearchParams();
+    if (params?.restaurantId) queryParams.set('restaurantId', params.restaurantId);
+    
+    const query = queryParams.toString();
+    return fetchAPI(`/categorias${query ? `?${query}` : ''}`);
+  },
+
+  buscarPorId: async (id: string) => {
+    return fetchAPI(`/categorias/${id}`);
+  },
+
+  criar: async (categoria: any) => {
+    return fetchAPI('/categorias', {
+      method: 'POST',
+      body: JSON.stringify(categoria),
+    });
+  },
+
+  atualizar: async (id: string, categoria: any) => {
+    return fetchAPI(`/categorias/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(categoria),
+    });
+  },
+
+  alternarStatus: async (id: string) => {
+    return fetchAPI(`/categorias/${id}/status`, {
+      method: 'PATCH',
+    });
+  },
+
+  deletar: async (id: string) => {
+    return fetchAPI(`/categorias/${id}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
 export default {
   auth: authAPI,
   produtos: produtosAPI,
@@ -259,4 +308,5 @@ export default {
   enderecos: enderecosAPI,
   horarios: horariosAPI,
   cupons: cuponsAPI,
+  categorias: categoriasAPI,
 };

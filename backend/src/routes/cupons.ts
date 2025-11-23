@@ -1,17 +1,18 @@
 import { Router } from "express";
 import { CuponsController } from "../controller/cuponsController";
+import { autenticar } from "../middleware/middlewareAutenticacao";
 
 const router = Router();
 
 // Rotas públicas
 router.get("/codigo/:codigo", CuponsController.obterCuponPorCodigo);
-
-// Rotas admin/employee
-router.get("/", CuponsController.listarCupons);
-router.get("/:id", CuponsController.obterCupom);
-router.post("/", CuponsController.criarCupom);
-router.put("/:id", CuponsController.atualizarCupom);
-router.delete("/:id", CuponsController.deletarCupom);
 router.post("/usar", CuponsController.usarCupom);
+
+// Rotas autenticadas
+router.get("/", autenticar, CuponsController.listarCupons);
+router.get("/:id", autenticar, CuponsController.obterCupom);
+router.post("/", autenticar, CuponsController.criarCupom);
+router.put("/:id", autenticar, CuponsController.atualizarCupom);
+router.delete("/:id", autenticar, CuponsController.deletarCupom);
 
 export default router;

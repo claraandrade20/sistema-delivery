@@ -1,5 +1,5 @@
 import express from "express";
-import { register, login, getMe, getUsers } from "../controller/autenticacaoController";
+import { register, login, getMe, getUsers, resetPassword } from "../controller/autenticacaoController";
 
 const router = express.Router();
 
@@ -12,12 +12,14 @@ router.get("/", (req, res) => {
       register: "POST /api/auth/register",
       me: "GET /api/auth/me",
       users: "GET /api/auth/users",
+      resetPassword: "POST /api/auth/reset-password",
     },
   });
 });
 
 router.post("/register", register);
 router.post("/login", login);
+router.post("/reset-password", resetPassword);
 router.get("/me", getMe);
 router.get("/users", getUsers);
 

@@ -6,6 +6,94 @@ import path from "path";
 const caminhoUsuarios = path.join(__dirname, "../data/usuarios.json");
 const JWT_SECRET = process.env.JWT_SECRET || "secret-key-default-dev-only";
 
+// Funções de validação
+function validarEmail(email: string): void {
+  if (!email) {
+    throw new Error("Email é obrigatório");
+  }
+
+  // Verificar se começa com letra minúscula
+  if (email[0] !== email[0].toLowerCase()) {
+    throw new Error("Email deve começar com letra minúscula");
+  }
+
+  // Verificar domínios permitidos
+  const dominiosPermitidos = ["@gmail.com", "@hotmail.com", "@yahoo.com", "@restaurant.com", "@deliverysystem.com"];
+  const temDominioPermitido = dominiosPermitidos.some((dominio) =>
+    email.endsWith(dominio)
+  );
+
+  if (!temDominioPermitido) {
+    throw new Error(
+      "Email deve terminar com @gmail.com, @hotmail.com, @yahoo.com, @restaurant.com ou @deliverysystem.com"
+    );
+  }
+}
+
+function validarSenha(password: string): void {
+  if (!password) {
+    throw new Error("Senha é obrigatória");
+  }
+
+  if (password.length < 6 || password.length > 8) {
+    throw new Error("Senha deve ter entre 6 e 8 caracteres");
+  }
+
+  // Verificar se contém letras maiúsculas e minúsculas
+  const temMaiuscula = /[A-Z]/.test(password);
+  const temMinuscula = /[a-z]/.test(password);
+
+  if (!temMaiuscula || !temMinuscula) {
+    throw new Error(
+      "Senha deve conter letras maiúsculas e minúsculas"
+    );
+  }
+}
+
+function validarNome(nome: string): void {
+  if (!nome) {
+    throw new Error("Nome é obrigatório");
+  }
+
+  // Verificar se contém apenas letras e espaços
+  if (!/^[a-zA-Z\s]+$/.test(nome)) {
+    throw new Error("Nome deve conter apenas letras");
+  }
+
+  // Dividir nome e sobrenome
+  const partes = nome.trim().split(/\s+/);
+
+  if (partes.length < 2) {
+    throw new Error("Nome deve conter nome e sobrenome");
+  }
+
+  // Verificar se cada parte começa com letra maiúscula
+  for (const parte of partes) {
+    if (parte[0] !== parte[0].toUpperCase()) {
+      throw new Error(
+        `Cada parte do nome deve começar com letra maiúscula. Erro em: ${parte}`
+      );
+    }
+  }
+}
+
+function validarTelefone(phone: string): void {
+  if (!phone) {
+    throw new Error("Telefone é obrigatório");
+  }
+
+  // Remover caracteres de formatação e verificar se contém apenas números
+  const apenasNumeros = phone.replace(/\D/g, "");
+
+  if (!/^\d+$/.test(apenasNumeros)) {
+    throw new Error("Telefone deve conter apenas números");
+  }
+
+  if (apenasNumeros.length < 10) {
+    throw new Error("Telefone deve conter pelo menos 10 dígitos");
+  }
+}
+
 export interface Usuario {
   id: string;
   name: string;
@@ -30,6 +118,12 @@ export function registrarUsuario(dados: {
   phone: string;
   role?: string;
 }): Omit<Usuario, "password"> {
+  // Validar dados de entrada
+  validarEmail(dados.email);
+  validarSenha(dados.password);
+  validarNome(dados.name);
+  validarTelefone(dados.phone);
+
   const usuarios: Usuario[] = lerJSON(caminhoUsuarios);
 
   // Verificar se email já existe
@@ -59,16 +153,24 @@ export function registrarUsuario(dados: {
   return usuarioSemSenha;
 }
 
-export async function fazerLogin(email: string, password: string): Promise<LoginResponse> {
+export function fazerLogin(email: string, password: string): LoginResponse {
+  // Validar dados de entrada
+  if (!email || !password) {
+    throw new Error("Email e senha são obrigatórios");
+  }
+
+  // Normalizar email para minúsculas
+  const emailNormalizado = email.toLowerCase().trim();
+
   const usuarios: Usuario[] = lerJSON(caminhoUsuarios);
 
-  console.log(`[LOGIN] Tentativa de login: ${email}`);
+  console.log(`[LOGIN] Tentativa de login: ${emailNormalizado}`);
   console.log(`[LOGIN] Total de usuários: ${usuarios.length}`);
 
-  const usuario = usuarios.find((u) => u.email === email && u.isActive);
+  const usuario = usuarios.find((u) => u.email === emailNormalizado && u.isActive);
 
   if (!usuario) {
-    console.log(`[LOGIN] Usuário não encontrado ou inativo: ${email}`);
+    console.log(`[LOGIN] Usuário não encontrado ou inativo: ${emailNormalizado}`);
     throw new Error("Credenciais inválidas");
   }
 
@@ -114,4 +216,39 @@ export function buscarUsuarioPorId(id: string): Omit<Usuario, "password"> | unde
 export function listarUsuarios(): Omit<Usuario, "password">[] {
   const usuarios: Usuario[] = lerJSON(caminhoUsuarios);
   return usuarios.map(({ password, ...user }) => user);
+}
+
+export function recuperarSenha(email: string, novaSenha: string): Omit<Usuario, "password"> {
+  // Validar dados
+  if (!email) {
+    throw new Error("Email é obrigatório");
+  }
+
+  if (!novaSenha) {
+    throw new Error("Nova senha é obrigatória");
+  }
+
+  // Validar a nova senha
+  validarSenha(novaSenha);
+
+  const usuarios: Usuario[] = lerJSON(caminhoUsuarios);
+
+  // Buscar usuário pelo email
+  const usuario = usuarios.find((u) => u.email === email);
+
+  if (!usuario) {
+    throw new Error("Email não encontrado");
+  }
+
+  // Gerar novo hash de senha
+  const novoHash = bcrypt.hashSync(novaSenha, 10);
+
+  // Atualizar a senha
+  usuario.password = novoHash;
+
+  // Salvar no arquivo
+  salvarJSON(caminhoUsuarios, usuarios);
+
+  const { password, ...usuarioSemSenha } = usuario;
+  return usuarioSemSenha;
 }

@@ -2,6 +2,10 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import pool from "../config/database";
 import { RowDataPacket, ResultSetHeader } from "mysql2/promise";
+import { lerJSON } from "../utils/fileUtils";
+import path from "path";
+
+const caminhoUsuarios = path.join(__dirname, "../data/usuarios.json");
 
 const JWT_SECRET = process.env.JWT_SECRET || "secret-key-default-dev-only";
 
@@ -34,6 +38,57 @@ export interface UsuarioDB extends RowDataPacket {
   restaurantId?: string;
 }
 
+// Funções de validação
+function validarEmail(email: string): void {
+  if (!email) {
+    throw new Error("Email é obrigatório");
+  }
+
+  // Verificar se começa com letra minúscula
+  if (email[0] !== email[0].toLowerCase()) {
+    throw new Error("Email deve começar com letra minúscula");
+  }
+
+  // Verificar domínios permitidos
+  const dominiosPermitidos = ["@gmail.com", "@hotmail.com", "@yahoo.com", "@restaurant.com", "@deliverysystem.com"];
+  const temDominioPermitido = dominiosPermitidos.some((dominio) =>
+    email.endsWith(dominio)
+  );
+
+  if (!temDominioPermitido) {
+    throw new Error(
+      "Email deve terminar com @gmail.com, @hotmail.com, @yahoo.com, @restaurant.com ou @deliverysystem.com"
+    );
+  }
+}
+
+function validarNome(nome: string): void {
+  if (!nome) {
+    throw new Error("Nome é obrigatório");
+  }
+
+  // Verificar se contém apenas letras e espaços
+  if (!/^[a-zA-Z\s]+$/.test(nome)) {
+    throw new Error("Nome deve conter apenas letras");
+  }
+
+  // Dividir nome e sobrenome
+  const partes = nome.trim().split(/\s+/);
+
+  if (partes.length < 2) {
+    throw new Error("Nome deve conter nome e sobrenome");
+  }
+
+  // Verificar se cada parte começa com letra maiúscula
+  for (const parte of partes) {
+    if (parte[0] !== parte[0].toUpperCase()) {
+      throw new Error(
+        `Cada parte do nome deve começar com letra maiúscula. Erro em: ${parte}`
+      );
+    }
+  }
+}
+
 /**
  * Registra um novo usuário no banco de dados
  */
@@ -44,6 +99,10 @@ export async function registrarUsuario(dados: {
   phone: string;
   role?: string;
 }): Promise<Omit<Usuario, "password">> {
+  // Validar dados
+  validarEmail(dados.email);
+  validarNome(dados.name);
+
   const connection = await pool.getConnection();
 
   try {
@@ -86,17 +145,55 @@ export async function registrarUsuario(dados: {
  * Realiza o login do usuário
  */
 export async function fazerLogin(email: string, password: string): Promise<LoginResponse> {
+  // Normalizar email para minúsculas
+  const emailNormalizado = email.toLowerCase().trim();
+
+  console.log(`[LOGIN] Tentativa de login: ${emailNormalizado}`);
+
+  // Primeiro, verificar se é admin ou funcionário no arquivo JSON
+  try {
+    const usuarios = lerJSON(caminhoUsuarios);
+    const usuarioJSON = usuarios.find((u: any) => u.email === emailNormalizado && u.isActive && (u.role === 'admin' || u.role === 'employee'));
+
+    if (usuarioJSON) {
+      console.log(`[LOGIN] Usuário admin/funcionário encontrado: ${usuarioJSON.name}`);
+      console.log(`[LOGIN] Hash da senha no JSON: ${usuarioJSON.password.substring(0, 20)}...`);
+
+      const senhaValida = bcrypt.compareSync(password, usuarioJSON.password);
+      console.log(`[LOGIN] Senha válida: ${senhaValida}`);
+
+      if (!senhaValida) {
+        throw new Error("Credenciais inválidas");
+      }
+
+      // Gerar token JWT
+      const token = jwt.sign(
+        { id: usuarioJSON.id, email: usuarioJSON.email, role: usuarioJSON.role },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      const { password: _, ...usuarioSemSenha } = usuarioJSON;
+
+      return {
+        token,
+        user: usuarioSemSenha,
+      };
+    }
+  } catch (error) {
+    console.log(`[LOGIN] Erro ao verificar arquivo JSON: ${error}`);
+  }
+
+  // Se não encontrou no JSON, procurar na tabela clientes (clientes do app)
   const connection = await pool.getConnection();
 
   try {
-    // Procurar primeiro na tabela clientes (clientes do app)
     const [clientes] = await connection.query<any[]>(
-      "SELECT id, nome, email, senha, telefone, ativo FROM clientes WHERE email = ? AND ativo = true",
-      [email]
+      "SELECT id, nome, email, senha, telefone, ativo FROM clientes WHERE LOWER(email) = ? AND ativo = true",
+      [emailNormalizado]
     );
 
-    console.log(`[LOGIN] Tentativa de login: ${email}`);
-    console.log(`[LOGIN] Clientes encontrados: ${clientes.length}`);
+    console.log(`[LOGIN] Clientes encontrados no DB: ${clientes.length}`);
 
     if (clientes.length === 0) {
       throw new Error("Credenciais inválidas");
@@ -249,6 +346,60 @@ export async function deletarUsuario(id: string): Promise<boolean> {
     );
 
     return result.affectedRows > 0;
+  } finally {
+    connection.release();
+  }
+}
+
+/**
+ * Recupera a senha do usuário alterando para uma nova senha
+ */
+export async function recuperarSenha(email: string, novaSenha: string): Promise<Omit<Usuario, "password">> {
+  const connection = await pool.getConnection();
+
+  try {
+    // Verificar se email existe
+    const [clientes] = await connection.query<any[]>(
+      "SELECT id, nome, email, telefone FROM clientes WHERE email = ?",
+      [email]
+    );
+
+    if (clientes.length === 0) {
+      throw new Error("Email não encontrado");
+    }
+
+    const usuario = clientes[0];
+
+    // Validar a nova senha (6-8 caracteres, maiúscula e minúscula)
+    if (novaSenha.length < 6 || novaSenha.length > 8) {
+      throw new Error("Senha deve ter entre 6 e 8 caracteres");
+    }
+
+    const temMaiuscula = /[A-Z]/.test(novaSenha);
+    const temMinuscula = /[a-z]/.test(novaSenha);
+
+    if (!temMaiuscula || !temMinuscula) {
+      throw new Error("Senha deve conter letras maiúsculas e minúsculas");
+    }
+
+    // Gerar novo hash
+    const novoHash = bcrypt.hashSync(novaSenha, 10);
+
+    // Atualizar senha
+    await connection.query<ResultSetHeader>(
+      "UPDATE clientes SET senha = ? WHERE email = ?",
+      [novoHash, email]
+    );
+
+    return {
+      id: usuario.id.toString(),
+      name: usuario.nome,
+      email: usuario.email,
+      phone: usuario.telefone,
+      role: "client" as const,
+      createdAt: new Date().toISOString(),
+      isActive: true,
+    };
   } finally {
     connection.release();
   }
