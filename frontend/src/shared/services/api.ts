@@ -169,6 +169,10 @@ export const pedidosAPI = {
       body: JSON.stringify(pedido),
     });
   },
+
+  listarItensVendas: async () => {
+    return fetchAPI('/pedidos/itens/vendas');
+  },
 };
 
 // ========== Endereços ==========

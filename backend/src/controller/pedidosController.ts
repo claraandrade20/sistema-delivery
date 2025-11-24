@@ -92,3 +92,15 @@ export async function atualizarPedido(req: Request, res: Response) {
     res.status(400).json({ erro: error.message });
   }
 }
+
+export async function getItensVendas(req: Request, res: Response) {
+  try {
+    console.log('📊 GET /pedidos/itens/vendas');
+    const itens = await service.listarItensVendas();
+    console.log('📊 Itens retornados:', itens);
+    res.json(itens);
+  } catch (error: any) {
+    console.error('❌ Erro em getItensVendas:', error);
+    res.status(500).json({ erro: error.message });
+  }
+}

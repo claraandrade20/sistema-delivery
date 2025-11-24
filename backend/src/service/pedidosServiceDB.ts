@@ -378,6 +378,49 @@ export async function atualizarPedido(id: string, dados: any): Promise<Pedido | 
 }
 
 /**
+ * Retorna todos os itens de pedidos com contagem de vendas
+ */
+export async function listarItensVendas() {
+  const connection = await pool.getConnection();
+
+  try {
+    console.log('📊 Iniciando listarItensVendas...');
+    
+    // Buscar todos os itens dos pedidos com informações do produto
+    const [items] = await connection.query(
+      `SELECT 
+        ip.id_produto as productId,
+        MAX(COALESCE(p.nome, ip.nome_produto)) as productName,
+        MAX(p.imagem) as image,
+        SUM(ip.quantidade) as totalQuantity,
+        COUNT(DISTINCT ip.id_pedido) as timesOrdered,
+        SUM(ip.subtotal) as totalRevenue
+       FROM itens_pedido ip
+       LEFT JOIN produtos p ON ip.id_produto = p.id
+       WHERE p.id IS NOT NULL
+       GROUP BY ip.id_produto
+       ORDER BY totalQuantity DESC`
+    );
+
+    console.log('📊 Itens encontrados:', items);
+
+    return (items as any[]).map(item => ({
+      productId: item.productId,
+      productName: item.productName,
+      image: item.image || '',
+      totalQuantity: item.totalQuantity || 0,
+      timesOrdered: item.timesOrdered || 0,
+      totalRevenue: item.totalRevenue || 0,
+    }));
+  } catch (error) {
+    console.error('❌ Erro em listarItensVendas:', error);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+/**
  * Formata um pedido do banco para o formato esperado pela API
  */
 function formatarPedido(row: any): Pedido {

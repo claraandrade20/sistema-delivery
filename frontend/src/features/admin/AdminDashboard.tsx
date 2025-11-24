@@ -39,15 +39,19 @@ export const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      const [ordersData, productsData, usersData] = await Promise.all([
+      const [ordersData, productsData, usersData, itensVendasData] = await Promise.all([
         pedidosAPI.listar(),
         produtosAPI.listar(),
         authAPI.getUsers(),
+        pedidosAPI.listarItensVendas(),
       ]);
+
+      console.log('📊 Dados recebidos:', { ordersData, productsData, usersData, itensVendasData });
 
       const ordersArray = Array.isArray(ordersData) ? ordersData : [];
       const productsArray = Array.isArray(productsData) ? productsData : [];
       const usersArray = Array.isArray(usersData) ? usersData : [];
+      const itensVendas = Array.isArray(itensVendasData) ? itensVendasData : [];
 
       setOrders(ordersArray);
       setProducts(productsArray);
@@ -63,28 +67,22 @@ export const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
       const totalCustomers = usersArray.filter((u: any) => u.role === 'client').length;
       const totalEmployees = usersArray.filter((u: any) => u.role === 'employee').length;
 
-      // Contar vendas por produto através dos pedidos
-      const productSalesMap: { [key: string]: { count: number; product: any } } = {};
-      
-      ordersArray.forEach(order => {
-        if (order.items && Array.isArray(order.items)) {
-          order.items.forEach((item: any) => {
-            const productId = item.produto_id || item.id;
-            if (!productSalesMap[productId]) {
-              productSalesMap[productId] = { count: 0, product: item };
-            }
-            productSalesMap[productId].count += item.quantidade || 1;
-          });
-        }
-      });
+      // Usar apenas os itens de vendas retornados pela API (sem duplicação)
+      const topSellingProducts = itensVendas
+        .slice(0, 5)
+        .map((item: any) => ({
+          id: item.productId,
+          nome: item.productName,
+          name: item.productName,
+          imagem: item.image,
+          image: item.image,
+          salesCount: item.totalQuantity || 0,
+          totalQuantity: item.totalQuantity || 0,
+          timesOrdered: item.timesOrdered || 0,
+          totalRevenue: item.totalRevenue || 0,
+        }));
 
-      const topSellingProducts = productsArray
-        .map(prod => ({
-          ...prod,
-          salesCount: productSalesMap[prod.id]?.count || 0,
-        }))
-        .sort((a, b) => b.salesCount - a.salesCount)
-        .slice(0, 5);
+      console.log('📊 Top selling products:', topSellingProducts);
 
       setStats({
         totalRestaurants: 1,
@@ -97,7 +95,7 @@ export const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
       setChartData(generateChartData(ordersArray));
     } catch (error) {
       toast.error('Erro ao carregar dados do dashboard');
-      console.error(error);
+      console.error('❌ Erro ao carregar dashboard:', error);
     } finally {
       setLoading(false);
     }
@@ -222,8 +220,8 @@ export const AdminDashboard = ({ onNavigate }: AdminDashboardProps) => {
                     />
                   )}
                   <div className="flex-1">
-                    <p className="font-semibold text-gray-900">{product.nome || product.name}</p>
-                    <p className="text-sm text-gray-600">{product.salesCount || 0} {product.salesCount === 1 ? 'venda' : 'vendas'}</p>
+                    <p className="font-semibold text-gray-900">{product.nome || product.name || `Produto ${product.id}`}</p>
+                    <p className="text-sm text-gray-600">{product.totalQuantity || product.salesCount || 0} {product.totalQuantity === 1 || product.salesCount === 1 ? 'unidade vendida' : 'unidades vendidas'}</p>
                   </div>
                 </div>
               ))
