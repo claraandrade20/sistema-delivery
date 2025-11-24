@@ -318,13 +318,15 @@ Projeto full-stack para fins acadêmicos: frontend em React + Vite e backend em 
 
 ## Como rodar (rápido)
 
-Abra dois terminais (um para backend, outro para frontend).
+Abra dois terminais (um para backend e outro para frontend).
+
 
 Backend (PowerShell):
 ```powershell
 cd backend
 npm install
-npm run migrate   # (se existir) inicializa dados/migrations
+npm node test/test-simple.js   # testa a conexão do bando de dados 
+npm run migrate   # inicializa dados/migrations do banco de dados
 npm run dev       # inicia em modo desenvolvimento
 ```
 
@@ -345,6 +347,7 @@ URLs padrão:
 
 - Backend:
   - `npm run dev` — inicia servidor em modo dev (watch)
+  - `node test/test-simple.js` — testa a conexão do banco (MySQL) 
   - `npm run migrate` — migra/inicializa dados (conforme `backend/scripts`)
   - `npm test` — executa testes (se existir)
 
@@ -521,11 +524,11 @@ Consulte as rotas em `backend/src/routes` para a lista completa.
     npm test
     ```
 
----
+Documentação Completa do Sistema:
+[Documentação_Completa_Sistema_Delivery.pdf](https://github.com/user-attachments/files/23718990/Documentacao_Completa_Sistema_Delivery.pdf)
 
-Se quiser, eu posso:
-- ajustar mais exemplos de payloads para endpoints específicos (produtos, categorias, clientes)
-- criar um arquivo `backend/.env.example` e commitar
-- commitar as mudanças no `README.md` e abrir um PR automaticamente
+💡 **Autores:** Maria Clara Andrade Gomes e Rafael Carvalho Lopes 
+📘 **Projeto acadêmico — Ciência da Computação**
+
 
 
