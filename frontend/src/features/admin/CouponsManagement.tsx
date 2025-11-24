@@ -108,6 +108,53 @@ export const CouponsManagement = () => {
     data_fim: '',
   });
 
+  // === FILTRO DE CÓDIGO - Apenas letras maiúsculas e números ===
+  const handleCodigoChange = (value: string) => {
+    // Aceita apenas letras maiúsculas e números
+    const codigoFiltrado = value.replace(/[^A-Z0-9]/g, '').toUpperCase();
+    setCreateFormData({ ...createFormData, codigo: codigoFiltrado });
+  };
+
+  // === FILTRO DE DESCRIÇÃO - Letras, números e % ===
+  const handleDescricaoChange = (value: string) => {
+    // Aceita apenas letras, números, espaços e %
+    const descricaoFiltrada = value.replace(/[^a-zA-Z0-9\s%]/g, '');
+    setCreateFormData({ ...createFormData, descricao: descricaoFiltrada });
+  };
+
+  // === FILTRO DE DESCONTO - Números até 50 ===
+  const handleDescontoChange = (value: string) => {
+    // Remove caracteres não numéricos
+    let numeros = value.replace(/\D/g, '');
+    // Limita a 50
+    if (numeros.length > 0) {
+      const num = parseInt(numeros, 10);
+      if (num > 50) numeros = '50';
+    }
+    setCreateFormData({ ...createFormData, valor_desconto: numeros });
+  };
+
+  // === FILTRO DE QUANTIDADE - Apenas números ===
+  const handleQuantidadeChange = (value: string) => {
+    const numeros = value.replace(/\D/g, '');
+    setCreateFormData({ ...createFormData, quantidade_total: numeros });
+  };
+
+  // === FILTRO DE DATA - Apenas números ===
+  const handleDataInicioChange = (value: string) => {
+    setCreateFormData({ ...createFormData, data_inicio: value });
+  };
+
+  const handleDataFimChange = (value: string) => {
+    setCreateFormData({ ...createFormData, data_fim: value });
+  };
+
+  // === FILTRO DE USO MÍNIMO - Apenas números ===
+  const handleUsoMinimoChange = (value: string) => {
+    const numeros = value.replace(/\D/g, '');
+    setCreateFormData({ ...createFormData, uso_minimo: numeros || '0' });
+  };
+
   useEffect(() => {
     carregarCupons();
   }, []);
@@ -247,7 +294,8 @@ export const CouponsManagement = () => {
                 <Input
                   placeholder="Ex: PROMO10"
                   value={createFormData.codigo}
-                  onChange={(e) => setCreateFormData({ ...createFormData, codigo: e.target.value })}
+                  onChange={(e) => handleCodigoChange(e.target.value)}
+                  maxLength={20}
                 />
               </div>
               <div>
@@ -255,7 +303,7 @@ export const CouponsManagement = () => {
                 <Input
                   placeholder="Descrição do cupom"
                   value={createFormData.descricao}
-                  onChange={(e) => setCreateFormData({ ...createFormData, descricao: e.target.value })}
+                  onChange={(e) => handleDescricaoChange(e.target.value)}
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -265,8 +313,10 @@ export const CouponsManagement = () => {
                     type="number"
                     placeholder="10"
                     value={createFormData.valor_desconto}
-                    onChange={(e) => setCreateFormData({ ...createFormData, valor_desconto: e.target.value })}
+                    onChange={(e) => handleDescontoChange(e.target.value)}
+                    max={50}
                   />
+                  <p className="text-xs text-gray-500 mt-1">Máximo: 50%</p>
                 </div>
                 <div>
                   <Label>Tipo</Label>
@@ -287,7 +337,7 @@ export const CouponsManagement = () => {
                     type="number"
                     placeholder="100"
                     value={createFormData.quantidade_total}
-                    onChange={(e) => setCreateFormData({ ...createFormData, quantidade_total: e.target.value })}
+                    onChange={(e) => handleQuantidadeChange(e.target.value)}
                   />
                 </div>
                 <div>
@@ -296,7 +346,7 @@ export const CouponsManagement = () => {
                     type="number"
                     placeholder="0"
                     value={createFormData.uso_minimo}
-                    onChange={(e) => setCreateFormData({ ...createFormData, uso_minimo: e.target.value })}
+                    onChange={(e) => handleUsoMinimoChange(e.target.value)}
                   />
                 </div>
               </div>
@@ -306,7 +356,7 @@ export const CouponsManagement = () => {
                   <Input
                     type="date"
                     value={createFormData.data_inicio}
-                    onChange={(e) => setCreateFormData({ ...createFormData, data_inicio: e.target.value })}
+                    onChange={(e) => handleDataInicioChange(e.target.value)}
                   />
                 </div>
                 <div>
@@ -314,7 +364,7 @@ export const CouponsManagement = () => {
                   <Input
                     type="date"
                     value={createFormData.data_fim}
-                    onChange={(e) => setCreateFormData({ ...createFormData, data_fim: e.target.value })}
+                    onChange={(e) => handleDataFimChange(e.target.value)}
                   />
                 </div>
               </div>
@@ -412,14 +462,15 @@ export const CouponsManagement = () => {
                               <Label>Código do Cupom</Label>
                               <Input
                                 value={editFormData.codigo}
-                                onChange={(e) => setEditFormData({ ...editFormData, codigo: e.target.value })}
+                                onChange={(e) => setEditFormData({ ...editFormData, codigo: e.target.value.replace(/[^A-Z0-9]/g, '').toUpperCase() })}
+                                maxLength={20}
                               />
                             </div>
                             <div>
                               <Label>Descrição</Label>
                               <Input
                                 value={editFormData.descricao}
-                                onChange={(e) => setEditFormData({ ...editFormData, descricao: e.target.value })}
+                                onChange={(e) => setEditFormData({ ...editFormData, descricao: e.target.value.replace(/[^a-zA-Z0-9\s%]/g, '') })}
                               />
                             </div>
                             <div className="grid grid-cols-2 gap-4">
@@ -428,7 +479,12 @@ export const CouponsManagement = () => {
                                 <Input
                                   type="number"
                                   value={editFormData.valor_desconto}
-                                  onChange={(e) => setEditFormData({ ...editFormData, valor_desconto: parseFloat(e.target.value) })}
+                                  onChange={(e) => {
+                                    let valor = e.target.value.replace(/\D/g, '');
+                                    if (valor.length > 0 && parseInt(valor) > 50) valor = '50';
+                                    setEditFormData({ ...editFormData, valor_desconto: valor ? parseInt(valor) : 0 });
+                                  }}
+                                  max={50}
                                 />
                               </div>
                               <div>
@@ -449,7 +505,7 @@ export const CouponsManagement = () => {
                                 <Input
                                   type="number"
                                   value={editFormData.quantidade_total}
-                                  onChange={(e) => setEditFormData({ ...editFormData, quantidade_total: parseInt(e.target.value) })}
+                                  onChange={(e) => setEditFormData({ ...editFormData, quantidade_total: parseInt(e.target.value.replace(/\D/g, '')) || 0 })}
                                 />
                               </div>
                               <div>
@@ -457,7 +513,7 @@ export const CouponsManagement = () => {
                                 <Input
                                   type="number"
                                   value={editFormData.uso_minimo}
-                                  onChange={(e) => setEditFormData({ ...editFormData, uso_minimo: parseFloat(e.target.value) })}
+                                  onChange={(e) => setEditFormData({ ...editFormData, uso_minimo: parseFloat(e.target.value.replace(/\D/g, '')) || 0 })}
                                 />
                               </div>
                             </div>

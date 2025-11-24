@@ -36,6 +36,22 @@ export const CategoriesManagement = () => {
   const [newImageUrl, setNewImageUrl] = useState('');
   const [savingNew, setSavingNew] = useState(false);
 
+  // === FILTRO DE NOME - Apenas letras e espaços ===
+  const handleNameChange = (value: string) => {
+    const apenasLetras = value.replace(/[^a-zA-Z\s]/g, '');
+    const nomeFormatado = apenasLetras
+      .split(' ')
+      .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase())
+      .join(' ');
+    setNewName(nomeFormatado);
+  };
+
+  // === FILTRO DE DESCRIÇÃO - Apenas letras e espaços ===
+  const handleDescriptionChange = (value: string) => {
+    const apenasLetras = value.replace(/[^a-zA-Z\s]/g, '');
+    setNewDescription(apenasLetras);
+  };
+
   // EDITAR CATEGORIA
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<Categoria | null>(null);
@@ -117,8 +133,18 @@ export const CategoriesManagement = () => {
         throw new Error(response.error || 'Erro ao criar categoria');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao criar categoria');
-      console.error(error);
+      console.error('Erro ao criar categoria:', error);
+      const errMsg = (error?.message || error?.toString() || '').toLowerCase();
+
+      if (errMsg.includes('401') || errMsg.includes('unauthorized')) {
+        toast.error('Sessão expirada. Faça login novamente.');
+      } else if (errMsg.includes('403')) {
+        toast.error('Você não tem permissão para criar categorias.');
+      } else if (errMsg.includes('já existe') || errMsg.includes('duplicate')) {
+        toast.error('Uma categoria com este nome já existe.');
+      } else {
+        toast.error('Erro ao criar categoria. Verifique os dados.');
+      }
     } finally {
       setSavingNew(false);
     }
@@ -157,8 +183,16 @@ export const CategoriesManagement = () => {
         throw new Error(response.error || 'Erro ao atualizar categoria');
       }
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao atualizar categoria');
-      console.error(error);
+      console.error('Erro ao atualizar categoria:', error);
+      const errMsg = (error?.message || error?.toString() || '').toLowerCase();
+
+      if (errMsg.includes('401') || errMsg.includes('unauthorized')) {
+        toast.error('Sessão expirada. Faça login novamente.');
+      } else if (errMsg.includes('403')) {
+        toast.error('Você não tem permissão para editar categorias.');
+      } else {
+        toast.error('Erro ao atualizar categoria. Tente novamente.');
+      }
     } finally {
       setSavingEdit(false);
     }
@@ -241,7 +275,7 @@ export const CategoriesManagement = () => {
                   <Input
                     placeholder="Ex: Pizzas"
                     value={newName}
-                    onChange={e => setNewName(e.target.value)}
+                    onChange={e => handleNameChange(e.target.value)}
                   />
                 </div>
 
@@ -250,7 +284,7 @@ export const CategoriesManagement = () => {
                   <Input
                     placeholder="Descrição da categoria"
                     value={newDescription}
-                    onChange={e => setNewDescription(e.target.value)}
+                    onChange={e => handleDescriptionChange(e.target.value)}
                   />
                 </div>
 
@@ -390,7 +424,12 @@ export const CategoriesManagement = () => {
                 <Input
                   value={editingCategory.nome}
                   onChange={e =>
-                    setEditingCategory({ ...editingCategory, nome: e.target.value })
+                    setEditingCategory({ 
+                      ...editingCategory, 
+                      nome: e.target.value.replace(/[^a-zA-Z\s]/g, '').split(' ')
+                        .map((palavra: string) => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase())
+                        .join(' ')
+                    })
                   }
                 />
               </div>
@@ -402,7 +441,7 @@ export const CategoriesManagement = () => {
                   onChange={e =>
                     setEditingCategory({
                       ...editingCategory,
-                      descricao: e.target.value,
+                      descricao: e.target.value.replace(/[^a-zA-Z\s]/g, ''),
                     })
                   }
                 />

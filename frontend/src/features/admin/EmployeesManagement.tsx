@@ -34,6 +34,43 @@ export const EmployeesManagement = () => {
     password: '',
     restaurantId: '1',
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // === MÁSCARA DE TELEFONE ===
+  const formatPhone = (value: string) => {
+    // Remove tudo que não é número
+    const numbers = value.replace(/\D/g, '');
+    const truncated = numbers.slice(0, 11);
+    
+    if (truncated.length <= 2) return truncated;
+    if (truncated.length <= 7) return `(${truncated.slice(0, 2)}) ${truncated.slice(2)}`;
+    return `(${truncated.slice(0, 2)}) ${truncated.slice(2, 7)}-${truncated.slice(7)}`;
+  };
+
+  // === FILTRO DE NOME - Apenas letras ===
+  const handleNameChange = (value: string) => {
+    // Aceita apenas letras e espaços
+    const apenasLetras = value.replace(/[^a-zA-Z\s]/g, '');
+    
+    // Formatar cada palavra com primeira letra maiúscula
+    const nomeFormatado = apenasLetras
+      .split(' ')
+      .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase())
+      .join(' ');
+    
+    setNewEmployeeData({ ...newEmployeeData, name: nomeFormatado });
+  };
+
+  // === FORMATADOR DE EMAIL - Primeira letra minúscula, permite números ===
+  const handleEmailChange = (value: string) => {
+    // Remove espaços e converte para minúsculas
+    let emailLimpo = value.trim().toLowerCase();
+    
+    // Remove tudo que não é letra, número, @ ou ponto
+    emailLimpo = emailLimpo.replace(/[^a-z0-9@.]/g, '');
+    
+    setNewEmployeeData({ ...newEmployeeData, email: emailLimpo });
+  };
 
   // Carregar funcionários do banco
   useEffect(() => {
@@ -123,11 +160,68 @@ export const EmployeesManagement = () => {
   };
 
   const addEmployee = async () => {
+    // Validações semelhantes às usadas em Login.tsx
     try {
-      if (!newEmployeeData.name || !newEmployeeData.email || !newEmployeeData.password) {
+      // Campos obrigatórios
+      if (!newEmployeeData.name || !newEmployeeData.email || !newEmployeeData.password || !newEmployeeData.restaurantId) {
         toast.error('Preencha todos os campos obrigatórios');
         return;
       }
+
+      // Nome completo
+      if (newEmployeeData.name.trim().split(' ').length < 2) {
+        toast.error('Digite o nome completo (Nome e Sobrenome)');
+        return;
+      }
+
+      // Email válido
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(newEmployeeData.email)) {
+        toast.error('Digite um e-mail válido');
+        return;
+      }
+
+      // Domínios permitidos (mesma lista do Login)
+      const allowedDomains = [
+        'gmail.com',
+        'hotmail.com',
+        'yahoo.com',
+        'restaurant.com',
+        'deliverysystem.com'
+      ];
+      const domain = newEmployeeData.email.split('@')[1]?.toLowerCase();
+      if (!allowedDomains.includes(domain)) {
+        toast.error('Use um e-mail pessoal válido (Gmail, Hotmail, Yahoo, etc).');
+        return;
+      }
+
+      // Telefone (opcional) - se preenchido, validar 11 dígitos e começa com 9
+      const cleanPhone = (newEmployeeData.phone || '').replace(/\D/g, '');
+      if (cleanPhone) {
+        if (cleanPhone.length !== 11) {
+          toast.error('O telefone deve ter 11 dígitos (DDD + 9 números)');
+          return;
+        }
+        if (cleanPhone[2] !== '9') {
+          toast.error('O celular deve começar com o dígito 9. Ex: (85) 9...');
+          return;
+        }
+      }
+
+      // Senha: 6-8 caracteres e deve ter maiúscula e minúscula
+      if (newEmployeeData.password.length < 6 || newEmployeeData.password.length > 8) {
+        toast.error('A senha deve ter entre 6 e 8 caracteres');
+        return;
+      }
+
+      const hasUpper = /[A-Z]/.test(newEmployeeData.password);
+      const hasLower = /[a-z]/.test(newEmployeeData.password);
+      if (!hasUpper || !hasLower) {
+        toast.error('A senha deve conter letras maiúsculas e minúsculas');
+        return;
+      }
+
+      setIsSubmitting(true);
 
       await funcionariosAPI.criar(newEmployeeData);
       toast.success('Funcionário adicionado com sucesso!');
@@ -142,7 +236,26 @@ export const EmployeesManagement = () => {
       carregarFuncionarios();
     } catch (error: any) {
       console.error('Erro ao adicionar funcionário:', error);
-      toast.error('Erro ao adicionar funcionário: ' + error.message);
+
+      const errMsg = (error?.message || error?.toString() || '').toLowerCase();
+
+      if (errMsg.includes('401') || errMsg.includes('unauthorized')) {
+        toast.error('Sessão expirada. Faça login novamente.');
+      } else if (
+        errMsg.includes('já cadastrado') ||
+        errMsg.includes('email already exists') ||
+        errMsg.includes('already-in-use') ||
+        errMsg.includes('duplicate') ||
+        errMsg.includes('409')
+      ) {
+        toast.error('Este e-mail já possui cadastro. Utilize outro e-mail.');
+      } else if (errMsg.includes('403')) {
+        toast.error('Você não tem permissão para adicionar funcionários.');
+      } else {
+        toast.error('Erro ao adicionar funcionário. Verifique os dados.');
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -173,9 +286,9 @@ export const EmployeesManagement = () => {
               <div>
                 <Label>Nome *</Label>
                 <Input 
-                  placeholder="Nome completo" 
+                  placeholder="João Silva" 
                   value={newEmployeeData.name}
-                  onChange={(e) => setNewEmployeeData({ ...newEmployeeData, name: e.target.value })}
+                  onChange={(e) => handleNameChange(e.target.value)}
                 />
               </div>
               <div>
@@ -184,7 +297,7 @@ export const EmployeesManagement = () => {
                   type="email" 
                   placeholder="email@example.com" 
                   value={newEmployeeData.email}
-                  onChange={(e) => setNewEmployeeData({ ...newEmployeeData, email: e.target.value })}
+                  onChange={(e) => handleEmailChange(e.target.value)}
                 />
               </div>
               <div>
@@ -192,7 +305,8 @@ export const EmployeesManagement = () => {
                 <Input 
                   placeholder="(85) 98765-4321" 
                   value={newEmployeeData.phone}
-                  onChange={(e) => setNewEmployeeData({ ...newEmployeeData, phone: e.target.value })}
+                  onChange={(e) => setNewEmployeeData({ ...newEmployeeData, phone: formatPhone(e.target.value) })}
+                  maxLength={15}
                 />
               </div>
               <div>
@@ -202,7 +316,11 @@ export const EmployeesManagement = () => {
                   placeholder="********" 
                   value={newEmployeeData.password}
                   onChange={(e) => setNewEmployeeData({ ...newEmployeeData, password: e.target.value })}
+                  maxLength={8}
                 />
+                <p className="text-xs text-gray-500 mt-1">
+                  6-8 caracteres (maiúscula + minúscula)
+                </p>
               </div>
               <div>
                 <Label>ID do Restaurante *</Label>
@@ -212,7 +330,9 @@ export const EmployeesManagement = () => {
                   onChange={(e) => setNewEmployeeData({ ...newEmployeeData, restaurantId: e.target.value })}
                 />
               </div>
-              <Button className="w-full" onClick={addEmployee}>Adicionar Funcionário</Button>
+              <Button className="w-full" onClick={addEmployee} disabled={isSubmitting}>
+                {isSubmitting ? 'Adicionando...' : 'Adicionar Funcionário'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>

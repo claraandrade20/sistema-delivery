@@ -34,6 +34,34 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
   const [newImagePreview, setNewImagePreview] = useState<string | null>(null);
   const [savingNew, setSavingNew] = useState(false);
 
+  // === FILTRO DE NOME - Apenas letras e espaços ===
+  const handleNameChange = (value: string) => {
+    const apenasLetras = value.replace(/[^a-zA-Z\s]/g, '');
+    const nomeFormatado = apenasLetras
+      .split(' ')
+      .map(palavra => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase())
+      .join(' ');
+    setNewName(nomeFormatado);
+  };
+
+  // === FILTRO DE DESCRIÇÃO - Apenas letras e espaços ===
+  const handleDescriptionChange = (value: string) => {
+    const apenasLetras = value.replace(/[^a-zA-Z\s]/g, '');
+    setNewDescription(apenasLetras);
+  };
+
+  // === FILTRO DE PREÇO - Apenas números ===
+  const handlePriceChange = (value: string) => {
+    const numeros = value.replace(/\D/g, '');
+    setNewPrice(numeros);
+  };
+
+  // === FILTRO DE ESTOQUE - Apenas números ===
+  const handleStockChange = (value: string) => {
+    const numeros = value.replace(/\D/g, '');
+    setNewStock(numeros);
+  };
+
   // ---------- Editar Produto ----------
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<any>(null);
@@ -143,8 +171,8 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
     const priceNumber = Number(newPrice);
     const stockNumber = Number(newStock);
 
-    if (isNaN(priceNumber) || priceNumber < 0) {
-      toast.error('O preço não pode ser negativo.');
+    if (isNaN(priceNumber) || priceNumber <= 0) {
+      toast.error('O preço deve ser maior que zero.');
       return;
     }
     if (isNaN(stockNumber) || stockNumber < 0) {
@@ -193,9 +221,19 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
       setProducts((prev) => [adaptedProduct, ...prev]);
       toast.success('Produto criado com sucesso!');
       setIsNewModalOpen(false);
-    } catch (error) {
-      toast.error('Erro ao criar produto');
-      console.error(error);
+    } catch (error: any) {
+      console.error('Erro ao criar produto:', error);
+      const errMsg = (error?.message || error?.toString() || '').toLowerCase();
+
+      if (errMsg.includes('401') || errMsg.includes('unauthorized')) {
+        toast.error('Sessão expirada. Faça login novamente.');
+      } else if (errMsg.includes('403')) {
+        toast.error('Você não tem permissão para criar produtos.');
+      } else if (errMsg.includes('produto já existe') || errMsg.includes('duplicate')) {
+        toast.error('Um produto com este nome já existe.');
+      } else {
+        toast.error('Erro ao criar produto. Verifique os dados.');
+      }
     } finally {
       setSavingNew(false);
     }
@@ -252,9 +290,17 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
 
       toast.success('Produto atualizado com sucesso!');
       setIsEditModalOpen(false);
-    } catch (error) {
-      toast.error('Erro ao atualizar produto');
-      console.error(error);
+    } catch (error: any) {
+      console.error('Erro ao atualizar produto:', error);
+      const errMsg = (error?.message || error?.toString() || '').toLowerCase();
+
+      if (errMsg.includes('401') || errMsg.includes('unauthorized')) {
+        toast.error('Sessão expirada. Faça login novamente.');
+      } else if (errMsg.includes('403')) {
+        toast.error('Você não tem permissão para editar produtos.');
+      } else {
+        toast.error('Erro ao atualizar produto. Tente novamente.');
+      }
     } finally {
       setSavingEdit(false);
     }
@@ -342,13 +388,15 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
                 <Label>Nome *</Label>
                 <Input
                   value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
+                  onChange={(e) => handleNameChange(e.target.value)}
+                  placeholder="Ex: Pizza Margherita"
                 />
 
                 <Label>Descrição</Label>
                 <Input
                   value={newDescription}
-                  onChange={(e) => setNewDescription(e.target.value)}
+                  onChange={(e) => handleDescriptionChange(e.target.value)}
+                  placeholder="Ex: Pizza tradicional com tomate e mussarela"
                 />
 
                 <Label>Imagem *</Label>
@@ -366,30 +414,18 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
                   <div>
                     <Label>Preço *</Label>
                     <Input
-                      type="number"
-                      min={0}
                       value={newPrice}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '' || Number(value) > 0) {
-                          setNewPrice(value);
-                        }
-                      }}
+                      onChange={(e) => handlePriceChange(e.target.value)}
+                      placeholder="0"
                     />
                   </div>
 
                   <div>
                     <Label>Estoque *</Label>
                     <Input
-                      type="number"
-                      min={0}
                       value={newStock}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        if (value === '' || Number(value) > 0) {
-                          setNewStock(value);
-                        }
-                      }}
+                      onChange={(e) => handleStockChange(e.target.value)}
+                      placeholder="0"
                     />
                   </div>
                 </div>
@@ -518,7 +554,12 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
               <Input
                 value={editingProduct.name}
                 onChange={(e) =>
-                  setEditingProduct({ ...editingProduct, name: e.target.value })
+                  setEditingProduct({ 
+                    ...editingProduct, 
+                    name: e.target.value.replace(/[^a-zA-Z\s]/g, '').split(' ')
+                      .map((palavra: string) => palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase())
+                      .join(' ')
+                  })
                 }
               />
 
@@ -528,7 +569,7 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
                 onChange={(e) =>
                   setEditingProduct({
                     ...editingProduct,
-                    description: e.target.value,
+                    description: e.target.value.replace(/[^a-zA-Z\s]/g, ''),
                   })
                 }
               />
