@@ -448,13 +448,9 @@ export const Login = ({ onSuccess }: LoginProps) => {
                 <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <p className="text-sm text-blue-800 mb-2">Contas de teste:</p>
                   <div className="space-y-1 text-xs text-blue-700">
-                    <p>Cliente: joao@gmail.com</p>
-                    <p>Funcionário: carlos@restaurant.com</p>
-                    <p>Admin: admin@deliverysystem.com</p>
-                    <p className="mt-2 italic">Senha: </p>
-                     <p>Cliente: joao123</p>
-                    <p>Funcionário: carlos789</p>
-                    <p>Admin: admin123</p>
+                    <p><strong>Cliente:</strong> joao@gmail.com - Senha: joao123</p>
+                    <p><strong>Funcionário:</strong> carlos@restaurant.com - Senha: carlos789</p>
+                    <p><strong>Admin:</strong> admin@deliverysystem.com - Senha: admin123</p>
                   </div>
                 </div>
               </form>
