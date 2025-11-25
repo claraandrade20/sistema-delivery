@@ -127,13 +127,30 @@ export const ProductsManagement = ({ onNavigate }: ProductsManagementProps) => {
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const toggleProductStatus = (productId: string) => {
-    setProducts((prev) =>
-      prev.map((p) =>
-        p.id === productId ? { ...p, isActive: !p.isActive } : p
-      )
-    );
-    toast.success('Status atualizado!');
+  const toggleProductStatus = async (productId: string) => {
+    const product = products.find((p) => p.id === productId);
+    if (!product) return;
+
+    try {
+      const newStatus = !product.isActive;
+      const updatedProduct = {
+        ...product,
+        ativo: newStatus,
+      };
+
+      await produtosAPI.atualizar(productId, { ativo: newStatus });
+
+      setProducts((prev) =>
+        prev.map((p) =>
+          p.id === productId ? { ...p, isActive: newStatus } : p
+        )
+      );
+      
+      toast.success(`Produto ${newStatus ? 'ativado' : 'inativado'} com sucesso!`);
+    } catch (error: any) {
+      console.error('Erro ao atualizar status:', error);
+      toast.error('Erro ao atualizar status do produto');
+    }
   };
 
   // -------- Modal: Novo Produto --------
